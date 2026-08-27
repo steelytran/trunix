@@ -1,0 +1,5 @@
+.DS_Store
+isodir
+*.iso
+*.o
+trunix
