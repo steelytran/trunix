@@ -4,10 +4,10 @@
 .section .data
 
 tty_row:
-	.long 1
+	.long 0
 
 tty_column:
-	.long 50
+	.long 0
 
 .section .text
 

@@ -11,7 +11,7 @@ BIN = trunix
 OBJS =\
 kernel.S.o \
 boot.S.o \
-stdio.S.o \
+tty.S.o \
 
 .PHONY: all clean iso
 
