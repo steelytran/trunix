@@ -31,6 +31,6 @@ iso: $(BIN)
 
 clean:
 	rm -rf isodir
-	rm *.o
-	rm $(BIN)
-	rm $(BIN).iso
+	rm -f *.o
+	rm -f $(BIN)
+	rm -f $(BIN).iso
