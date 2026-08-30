@@ -1,6 +1,9 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#include "debug.h"
+#include "tty.h"
+
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 
