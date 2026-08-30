@@ -1,7 +1,3 @@
-.section .data
-string:
-	.asciz "asdfasdf\nbl;sadflk\nhello"
-
 .section .rodata
 
 .globl global_descriptor_table
@@ -55,12 +51,19 @@ gdtr:
 	.word global_descriptor_table_end - global_descriptor_table - 1 /* limit */
 	.long global_descriptor_table /* base */
 
+interrupt_descriptor_table:
+	.word	/* offset 0:15 */
+	.word	/* segment */
+	.byte
+	.byte
+	.word	/* offset 16:31 */
+
 .section .bss
 .lcomm task_state_segment, 0x68
 
 .section .text
-.globl kernel_main
-kernel_main:
+.globl init_kernel
+init_kernel:
 	/* clear vga display */
 	movw $0b0000111100000000, %ax
 	movl $0xB8000, %edi
@@ -82,7 +85,6 @@ kernel_main:
 	movw $0x28, %ax
 	ltr %ax
 
-	pushl $string
-	call printk
-	addl $4, %esp
+	call kernel_main
+
 	ret

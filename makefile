@@ -2,6 +2,8 @@ CC = clang
 AS = clang
 LD = ld.lld
 
+CFLAGS = -ffreestanding -nostdlib
+
 GRUB = i686-elf-grub
 
 TARGET = -arch i386 -target i386-unknown-none-elf
@@ -9,8 +11,10 @@ TARGET = -arch i386 -target i386-unknown-none-elf
 BIN = trunix
 
 OBJS =\
-kernel.S.o \
+init.S.o \
+kernel.c.o \
 boot.S.o \
+print.c.o \
 tty.S.o \
 
 .PHONY: all clean iso
@@ -22,6 +26,9 @@ $(BIN): $(OBJS)
 
 %.S.o: %.S
 	$(AS) $(TARGET) -c $< -o $@
+
+%.c.o: %.c
+	$(CC) $(TARGET) $(CFLAGS) -c $< -o $@
 
 iso: $(BIN)
 	mkdir -p isodir/boot/grub

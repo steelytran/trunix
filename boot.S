@@ -33,7 +33,7 @@ _start:
 	movw %ax, %gs
 	movw %ax, %ss
 
-	call kernel_main
+	call init_kernel
 
 	cli
 1:
