@@ -11,11 +11,11 @@ TARGET = -arch i386 -target i386-unknown-none-elf
 BIN = trunix
 
 OBJS =\
-init.S.o \
-kernel.c.o \
 boot.S.o \
-print.c.o \
+init.S.o \
 tty.S.o \
+kernel.c.o \
+print.c.o \
 
 .PHONY: all clean iso
 

@@ -4,44 +4,6 @@
 #include "debug.h"
 #include "tty.h"
 
-#define VGA_WIDTH 80
-#define VGA_HEIGHT 25
-
-void movecursor(int);
-
-int tty_row = 0;
-int tty_column = 0;
-uint16_t* VGA = (uint16_t*)0xB8000;
-
-void
-putchar(char c)
-{
-	int offset;
-
-	if (c == '\n') {
-		tty_column = 0;
-
-		if (++tty_row == VGA_HEIGHT)
-			tty_row = 0;
-
-		offset = tty_column + tty_row * VGA_WIDTH;
-		movecursor(offset);
-	} else {
-		offset = tty_column + tty_row * VGA_WIDTH;
-		VGA[offset] = (uint16_t)c | 15 << 8;
-
-		if (++tty_column == VGA_WIDTH) {
-			tty_column = 0;
-			if (++tty_row == VGA_HEIGHT)
-				tty_row = 0;
-
-			offset = tty_column + tty_row * VGA_WIDTH;
-			movecursor(offset);
-		} else
-			movecursor(offset + 1);
-	}
-}
-
 static void
 printdec(int n)
 {
