@@ -2,7 +2,8 @@ CC = clang
 AS = clang
 LD = ld.lld
 
-CFLAGS = -ffreestanding -nostdlib
+CFLAGS = -ffreestanding -nostdlib -O2 -g -Wall -Wextra -Wpedantic -std=c99
+INCLUDE = -isystem include
 
 GRUB = i686-elf-grub
 
@@ -12,8 +13,9 @@ BIN = trunix
 
 OBJS =\
 boot.S.o \
-init.S.o \
+kernel.S.o \
 tty.S.o \
+string.S.o \
 kernel.c.o \
 print.c.o \
 
@@ -25,10 +27,10 @@ $(BIN): $(OBJS)
 	$(LD) -T linker.ld $^ -o $@
 
 %.S.o: %.S
-	$(AS) $(TARGET) -c $< -o $@
+	$(AS) $(INCLUDE) $(TARGET) -c $< -o $@
 
 %.c.o: %.c
-	$(CC) $(TARGET) $(CFLAGS) -c $< -o $@
+	$(CC) $(INCLUDE) $(TARGET) $(CFLAGS) -c $< -o $@
 
 iso: $(BIN)
 	mkdir -p isodir/boot/grub

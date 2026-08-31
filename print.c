@@ -1,8 +1,8 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#include "debug.h"
-#include "tty.h"
+#include <trunix/debug.h>
+#include <trunix/tty.h>
 
 static void
 printdec(int n)
@@ -37,7 +37,6 @@ static void
 printhex(unsigned int n, int ucase)
 {
 	int i = 0;
-	int d;
 	char buffer[8];
 	const char *hex;
 

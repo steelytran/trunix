@@ -62,13 +62,19 @@ interrupt_descriptor_table:
 .lcomm task_state_segment, 0x68
 
 .section .text
-.globl init_kernel
-init_kernel:
-	/* clear vga display */
-	movw $0b0000111100000000, %ax
-	movl $0xB8000, %edi
-	movl $(80 * 25), %ecx
-	rep stosw
+.globl init_descriptor_tables
+init_descriptor_tables:
+	cli
+
+	lgdt gdtr
+	ljmpl $0x08, $.reload_cs
+.reload_cs:
+	movw $0x10, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %gs
+	movw %ax, %ss
 
 	movl task_state_segment, %eax
 
@@ -85,6 +91,6 @@ init_kernel:
 	movw $0x28, %ax
 	ltr %ax
 
-	call kernel_main
+	sti
 
 	ret

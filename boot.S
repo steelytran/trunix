@@ -1,14 +1,13 @@
-/* multiboot flags */
-.set ALIGN, 1 << 0
-.set MEMINFO, 1 << 1
-.set FLAGS, ALIGN | MEMINFO
-.set MAGIC, 0x1BADB002 /* multiboot 1 signature */
+#define ASM_FILE
+#include <multiboot.h>
+
+#define FLAGS MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
 
 .section .multiboot
 	.align 4
-	.long MAGIC
+	.long MULTIBOOT_HEADER_MAGIC
 	.long FLAGS
-	.long -(MAGIC + FLAGS) /* checksum */
+	.long -(MULTIBOOT_HEADER_MAGIC + FLAGS) /* checksum */
 
 .section .bss
 .align 16
@@ -22,18 +21,10 @@ stack_top:
 _start:
 	mov $stack_top, %esp
 
-	cli
-	lgdt gdtr
-	ljmpl $0x08, $.reload_cs
-.reload_cs:
-	movw $0x10, %ax
-	movw %ax, %ds
-	movw %ax, %es
-	movw %ax, %fs
-	movw %ax, %gs
-	movw %ax, %ss
+	pushl %eax
+	pushl %ebx
 
-	call init_kernel
+	call kernel_main
 
 	cli
 1:

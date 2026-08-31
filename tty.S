@@ -8,6 +8,20 @@ tty_row:
 tty_column:
 	.long 0
 
+.globl cls
+cls:
+	pushl %ecx
+	pushl %edi
+
+	movl $0xB8000, %edi
+	movw $(15 << 8), %ax
+	movl $(VGA_WIDTH * VGA_HEIGHT), %ecx
+	rep stosw
+
+	popl %edi
+	popl %ecx
+	ret 
+
 .section .text
 movecursor:
 	pushl %eax
@@ -36,7 +50,6 @@ movecursor:
 .globl putchar
 putchar:
 	pushl %eax
-
 	cmpb $'\n', 8(%esp)
 	je newline
 
