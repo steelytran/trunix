@@ -2,13 +2,15 @@ ENTRY(_start)
 
 SECTIONS
 {
-	. = 2M; /* offset */
+	. = 1M; /* offset */
 
 	.text : ALIGN(4K)
 	{
 		*(.multiboot)
 		*(.text)
 	}
+
+	_kernel_start = .;
 
 	.rodata : ALIGN(4K)
 	{
@@ -25,4 +27,6 @@ SECTIONS
 		*(COMMON)
 		*(.bss)
 	}
+
+	_kernel_end = .;
 }

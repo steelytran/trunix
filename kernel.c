@@ -8,12 +8,21 @@
 
 extern void init_descriptor_tables(void);
 
+extern uint32_t _kernel_start;
+extern uint32_t _kernel_end;
+
+struct memory_map_entry {
+	uintptr_t	addr;
+	size_t		len;
+};
+
+struct memory_map_entry memory_map[32];
+
 void
 kernel_main(multiboot_info_t *mbd, uint32_t magic)
 {
-	int i;
+	int i, j;
 	multiboot_memory_map_t *mmmt;
-	size_t available_mem = 0;
 
 	cls();
 
@@ -25,21 +34,31 @@ kernel_main(multiboot_info_t *mbd, uint32_t magic)
 		return;
 	}
 
-	for (i = 0; i < mbd->mmap_length; i += sizeof(multiboot_memory_map_t)) {
+	for (i = j = 0; i < mbd->mmap_length;
+	     i += mmmt->size + sizeof(mmmt->size)) {
+
 		mmmt = (multiboot_memory_map_t *)( mbd->mmap_addr + i);
+		if (mmmt->type == MULTIBOOT_MEMORY_AVAILABLE) {
 
-		printk("Start Addr: 0x%x | Length: 0x%x | Size: 0x%x | Type: %d\n",
-			(uint32_t)mmmt->addr,
-			(uint32_t)mmmt->len,
-			mmmt->size,
-			mmmt->type
-		);
+			if (&_kernel_start >= mmmt->addr &&
+			    &_kernel_start < mmmt->addr + mmmt->len) {
+				memory_map[j].addr = (uintptr_t)&_kernel_end;
+				memory_map[j].len =
+				    (size_t)(mmmt->addr + mmmt->len) -
+				    (size_t)&_kernel_end;
+			} else {
+				memory_map[j].addr = (uintptr_t)mmmt->addr;
+				memory_map[j].len = (size_t)mmmt->len;
+			}
 
-		if (mmmt->type == MULTIBOOT_MEMORY_AVAILABLE)
-			available_mem += (size_t)mmmt->len;
+			printk("Address: 0x%x, Length: 0x%x\n",
+				memory_map[j].addr,
+				memory_map[j].len
+			);
+			++j;
+		}
 	}
 
-	printk("\n%d KiB of available memory.\n", available_mem >> 10);
 	init_descriptor_tables();
 	return;
 }
