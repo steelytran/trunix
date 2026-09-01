@@ -2,15 +2,14 @@ ENTRY(_start)
 
 SECTIONS
 {
-	. = 1M; /* offset */
+ 	. = 1M; /* offset */
+ 	_kernel_start = .;
 
 	.text : ALIGN(4K)
 	{
 		*(.multiboot)
 		*(.text)
 	}
-
-	_kernel_start = .;
 
 	.rodata : ALIGN(4K)
 	{
@@ -27,6 +26,8 @@ SECTIONS
 		*(COMMON)
 		*(.bss)
 	}
-
 	_kernel_end = .;
+	_bitmap = .;
+	. = . + 128K;
+	_mem_start = ALIGN(4K);
 }
