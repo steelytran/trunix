@@ -32,3 +32,19 @@ memset:
 	popl %edi
 	popl %ecx
 	ret 
+
+.globl memsetl
+memsetl:
+	pushl %ecx
+	pushl %edi
+
+	movl 12(%esp), %edi
+	movl 16(%esp), %eax
+	movl 20(%esp), %ecx
+	rep stosl
+
+	movl 12(%esp), %eax
+
+	popl %edi
+	popl %ecx
+	ret 

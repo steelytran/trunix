@@ -10,10 +10,14 @@ extern void init_descriptor_tables(void);
 
 extern uint32_t _kernel_start;
 extern uint32_t _kernel_end;
-extern uint32_t _bitmap;
 extern uint32_t _mem_start;
 
-uint8_t *bitmap = &_bitmap;
+uintptr_t kernel_start = (uintptr_t)&_kernel_start;
+uintptr_t kernel_end = (uintptr_t)&_kernel_end;
+uintptr_t mem_start = (uintptr_t)&_mem_start;
+
+uint32_t *bitmap = &_kernel_end;
+
 int page_n;
 size_t bitmap_len;
 
@@ -25,14 +29,30 @@ struct memory_map_entry {
 struct memory_map_entry memory_map[32];
 
 void *
-alloc_pages(void)
+alloc_pages(unsigned int n)
 {
-	int i;
-	for (i = 0; i < page_n; ++i)  {
-		if (!(bitmap[i >> 3] & (1 << (i & 7))))
-			return bitmap + (i << 12);
+	int i, pages;
+	for (i = pages = 0; i < page_n; ++i)  {
+		if (!(bitmap[i >> 5] & (1 << (i & 31)))) {
+			if (++pages == n) {
+				for (; pages > 0; --i, --pages)
+					bitmap[i >> 5] |= (1 << (i & 31));
+
+				return (void *)(mem_start + (++i << 12));
+			}
+		} else pages = 0;
 	}
 	return NULL;
+}
+
+void
+free_pages(void *p, unsigned int n)
+{
+	int i;
+	unsigned int p_bit = ((uintptr_t)p - mem_start) >> 12;
+
+	for (i = p_bit; i < p_bit + n; ++i)
+		bitmap[i >> 5] &= ~(1 << (i & 31));
 }
 
 void
@@ -56,8 +76,8 @@ kernel_main(multiboot_info_t *mbd, uint32_t magic)
 		mmmt = (multiboot_memory_map_t *)(mbd->mmap_addr + i);
 		if (mmmt->type == MULTIBOOT_MEMORY_AVAILABLE) {
 
-			if (&_kernel_start >= mmmt->addr &&
-			    &_kernel_start < mmmt->addr + mmmt->len) {
+			if (kernel_start >= mmmt->addr &&
+			    kernel_start < mmmt->addr + mmmt->len) {
 				memory_map[j].addr = (uintptr_t)&_mem_start;
 				memory_map[j].len =
 				    (size_t)(mmmt->addr + mmmt->len) -
@@ -76,14 +96,11 @@ kernel_main(multiboot_info_t *mbd, uint32_t magic)
 	}
 
 	init_descriptor_tables();
-/*
- * todo make this not slop
- */
-	page_n = (memory_map[1].len >> 12);
-	bitmap_len = page_n >> 3;
-	memset(bitmap, 0x00, bitmap_len);
 
-	printk("allocated page: 0x%x\n", alloc_pages());
-	printk("no. pages: %d\n", page_n);
+	page_n = (memory_map[1].len >> 12);
+	bitmap_len = page_n >> 5;
+
+	memsetl(bitmap, 0, bitmap_len);
+
 	return;
 }

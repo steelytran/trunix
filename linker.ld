@@ -27,7 +27,6 @@ SECTIONS
 		*(.bss)
 	}
 	_kernel_end = .;
-	_bitmap = .;
 	. = . + 128K;
 	_mem_start = ALIGN(4K);
 }
