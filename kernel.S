@@ -76,7 +76,7 @@ init_descriptor_tables:
 	movw %ax, %gs
 	movw %ax, %ss
 
-	movl task_state_segment, %eax
+	movl $task_state_segment, %eax
 
 	/* base 0:15 */
 	movw %ax, (global_descriptor_table + 0x28 + 2)
@@ -93,4 +93,17 @@ init_descriptor_tables:
 
 	sti
 
+	ret
+
+.globl load_page_directory
+load_page_directory:
+	movl 4(%esp), %eax
+	movl %eax, %cr3
+	ret
+
+.globl enable_paging
+enable_paging:
+	movl %cr0, %eax
+	orl $0x80000000, %eax
+	movl %eax, %cr0
 	ret

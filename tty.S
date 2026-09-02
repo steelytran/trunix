@@ -18,6 +18,10 @@ cls:
 	movl $(VGA_WIDTH * VGA_HEIGHT), %ecx
 	rep stosw
 
+	pushl $0
+	call movecursor
+	addl $4, %esp
+
 	popl %edi
 	popl %ecx
 	ret 

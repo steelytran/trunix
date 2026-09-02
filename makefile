@@ -2,7 +2,7 @@ CC = clang
 AS = clang
 LD = ld.lld
 
-CFLAGS = -ffreestanding -nostdlib -O2 -g -Wall -Wextra -Wpedantic -std=c99
+CFLAGS = -ffreestanding -nostdlib -O1 -g -Wall -Wextra -Wpedantic -std=c99
 INCLUDE = -isystem include
 
 GRUB = i686-elf-grub

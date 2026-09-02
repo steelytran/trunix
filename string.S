@@ -17,6 +17,25 @@ memcpy:
 	popl %ecx
 	ret 
 
+.globl memcpyl
+memcpyl:
+	pushl %ecx
+	pushl %esi
+	pushl %edi
+
+	movl 16(%esp), %edi
+	movl 20(%esp), %esi
+	movl 24(%esp), %ecx
+	rep movsl
+
+	movl 20(%esp), %eax
+
+	popl %edi
+	popl %esi
+	popl %ecx
+	ret 
+
+
 .globl memset
 memset:
 	pushl %ecx

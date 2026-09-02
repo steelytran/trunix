@@ -3,10 +3,13 @@
 
 #include <trunix/debug.h>
 #include <trunix/tty.h>
+#include <trunix/trunix.h>
 #include <multiboot.h>
 #include <string.h>
 
 extern void init_descriptor_tables(void);
+extern void load_page_directory(uint32_t *);
+extern void enable_paging(void);
 
 extern uint32_t _kernel_start;
 extern uint32_t _kernel_end;
@@ -17,6 +20,8 @@ uintptr_t kernel_end = (uintptr_t)&_kernel_end;
 uintptr_t mem_start = (uintptr_t)&_mem_start;
 
 uint32_t *bitmap = &_kernel_end;
+uint32_t *page_directory = NULL;
+uint32_t *page_table = NULL;
 
 int page_n;
 size_t bitmap_len;
@@ -27,6 +32,13 @@ struct memory_map_entry {
 };
 
 struct memory_map_entry memory_map[32];
+
+void
+panic(const char * s)
+{
+	printk(s);
+	__asm volatile("hlt");
+}
 
 void *
 alloc_pages(unsigned int n)
@@ -78,6 +90,7 @@ kernel_main(multiboot_info_t *mbd, uint32_t magic)
 
 			if (kernel_start >= mmmt->addr &&
 			    kernel_start < mmmt->addr + mmmt->len) {
+
 				memory_map[j].addr = (uintptr_t)&_mem_start;
 				memory_map[j].len =
 				    (size_t)(mmmt->addr + mmmt->len) -
@@ -85,22 +98,38 @@ kernel_main(multiboot_info_t *mbd, uint32_t magic)
 			} else {
 				memory_map[j].addr = mmmt->addr;
 				memory_map[j].len = (size_t)mmmt->len;
-			}
 
-			printk("Address: 0x%x, Length: 0x%x\n",
-				memory_map[j].addr,
-				memory_map[j].len
-			);
+			}
 			++j;
+
 		}
+
 	}
 
 	init_descriptor_tables();
 
 	page_n = (memory_map[1].len >> 12);
 	bitmap_len = page_n >> 5;
-
 	memsetl(bitmap, 0, bitmap_len);
+
+	if ((page_directory = alloc_pages(1)) == NULL) {
+		panic("KERNEL PANIC: could not allocate page directory.\n");
+		return;
+	} if ((page_table = alloc_pages(1)) == NULL) {
+		panic("KERNEL PANIC: could not allocate page table.\n");
+		return;
+	}
+
+	memsetl(page_directory, 0x00000002, 1024);
+
+	for (i = kernel_start; i < &_mem_start; i += 0x1000)
+		page_table[i >> 12] = i | 3;
+
+	page_directory[0] = ((uintptr_t)page_table) | 3;
+	page_directory[1023] = ((uintptr_t)page_directory) | 3;
+
+	load_page_directory(page_directory);
+	enable_paging();
 
 	return;
 }
