@@ -12,6 +12,8 @@ TARGET = -arch i386 -target i386-unknown-none-elf
 BIN = trunix
 
 OBJS =\
+io.S.o \
+interrupt.S.o \
 boot.S.o \
 kernel.S.o \
 tty.S.o \

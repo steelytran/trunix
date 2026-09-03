@@ -4,6 +4,7 @@
 #include <trunix/debug.h>
 #include <trunix/tty.h>
 #include <trunix/trunix.h>
+#include <trunix/io.h>
 #include <multiboot.h>
 #include <string.h>
 
@@ -37,7 +38,7 @@ void
 panic(const char * s)
 {
 	printk(s);
-	__asm volatile("hlt");
+	__asm__ volatile("hlt");
 }
 
 void *
@@ -74,13 +75,10 @@ kernel_main(multiboot_info_t *mbd, uint32_t magic)
 	multiboot_memory_map_t *mmmt;
 	cls();
 
-	if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
-		printk("Invalid magic number\n");
-		return;
-	} if (!(mbd->flags >> 6 & 1)) {
-		printk("Invalid memory map passed by bootloader\n");
-		return;
-	}
+	if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
+		panic("Invalid magic number\n");
+	if (!(mbd->flags >> 6 & 1))
+		panic("Invalid memory map passed by bootloader\n");
 
 	for (i = j = 0; i < mbd->mmap_length;
 	     i += mmmt->size + sizeof(mmmt->size)) {
@@ -122,8 +120,8 @@ kernel_main(multiboot_info_t *mbd, uint32_t magic)
 
 	memsetl(page_directory, 0x00000002, 1024);
 
-	for (i = kernel_start; i < &_mem_start; i += 0x1000)
-		page_table[i >> 12] = i | 3;
+	for (i = 0; i < 1024; ++i)
+		page_table[i] = (i << 12) | 3;
 
 	page_directory[0] = ((uintptr_t)page_table) | 3;
 	page_directory[1023] = ((uintptr_t)page_directory) | 3;

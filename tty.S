@@ -27,6 +27,7 @@ cls:
 	ret 
 
 .section .text
+.globl movecursor
 movecursor:
 	pushl %eax
 	pushl %edx

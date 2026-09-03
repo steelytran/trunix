@@ -1,9 +1,9 @@
-.section .rodata
+.section .data
 
 .globl global_descriptor_table
 global_descriptor_table:
 /* null descriptor */
-		.fill 2, 4, 0
+		.fill 1, 8, 0
 
 /* kernel space code segment */
 	.word	0xFFFF	/* limit 0:15 */
@@ -38,7 +38,7 @@ global_descriptor_table:
 	.byte	0x00	/* base 24:31 */
 
 /* task state segment */
-	.word	0x0067	/* limit 0:15 */
+	.word	0x2068	/* limit 0:15 */
 	.skip	2	/* base 0:15 */
 	.skip	1	/* base 16:23 */
 	.byte	0x89	/* access */
@@ -51,15 +51,12 @@ gdtr:
 	.word global_descriptor_table_end - global_descriptor_table - 1 /* limit */
 	.long global_descriptor_table /* base */
 
-interrupt_descriptor_table:
-	.word	/* offset 0:15 */
-	.word	/* segment */
-	.byte
-	.byte
-	.word	/* offset 16:31 */
+io_permission_bitmap:
+	.fill 0x2000, 1, 0	/* UNSAFE!! THIS IS ONLY TEMPORARY FOR TESTING */
+	.byte 0xFF
 
-.section .bss
-.lcomm task_state_segment, 0x68
+task_state_segment:
+	.skip 0x68 
 
 .section .text
 .globl init_descriptor_tables
@@ -91,8 +88,43 @@ init_descriptor_tables:
 	movw $0x28, %ax
 	ltr %ax
 
-	sti
+	movw $(io_permission_bitmap - task_state_segment), %ax
+	movw %ax, (task_state_segment + 0x66)
 
+/*
+ * setup 8259 PIC to offset hardware IRQs,
+ * so that they do not conflict with
+ * reserved i386 protected mode cpu IRQs.
+ */
+	movb $0x11, %al
+	outb %al, $0x20
+	outb %al, $0xA0
+
+/* vector offset */
+	movb $0x20, %al
+	outb %al, $0x21
+	movb $0x28, %al
+	outb %al, $0xA1
+
+/* cascade */
+	movb $0x04, %al
+	outb %al, $0x21
+	movb $0x02, %al
+	outb %al, $0xA1
+
+/* 8086 mode (and not 8080) */
+	movb $0x01, %al
+	outb %al, $0x21
+	outb %al, $0xA1
+
+/* mask */
+	movb $0xFD, %al
+	outb %al, $0x21
+	movb $0xFF, %al
+	outb %al, $0xA1
+
+	call setup_idt
+	sti
 	ret
 
 .globl load_page_directory
