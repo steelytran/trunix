@@ -19,8 +19,8 @@ test_string:
 
 gpf_string:		.asciz "KERNEL PANIC: GENERAL PROTECTION FAULT\n"
 df_string:		.asciz "KERNEL PANIC: DOUBLE FAULT\n"
-pf_string:		.asciz "PAGE FAULT\n"
-invalid_tss_string:	.asciz "INVALID TASK STATE SEGMENT\n"
+pf_string:		.asciz "KERNEL PANIC: PAGE FAULT 0x%x AT 0x%x\n"
+invalid_tss_string:	.asciz "KERNEL PANIC: INVALID TASK STATE SEGMENT\n"
 
 .section .data
 idtp:
@@ -309,10 +309,15 @@ INT_0x0D:
 
 /* page fault */
 INT_0x0E:
+	popl %eax
+	movl %cr2, %ebx
+
+	pushl %ebx
+	pushl %eax
 	pushl $pf_string
 	call printk
-	addl $4, %esp
-	iret
+	addl $8, %esp
+	hlt
 
 /* x87 FPU error */
 INT_0x10:

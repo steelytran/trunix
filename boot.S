@@ -122,7 +122,6 @@ _start:
 
 
 	movl $0x00000002, boot_page_directory
-
 	movl %cr3, %ecx
 	movl %ecx, %cr3
 
