@@ -1,8 +1,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#include <trunix/debug.h>
-#include <trunix/tty.h>
+extern void putchar(char);
 
 static void
 printdec(int n)

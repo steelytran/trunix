@@ -1,5 +1,6 @@
-.set VGA_WIDTH, 80
-.set VGA_HEIGHT, 25
+#define VGA_WIDTH 80
+#define VGA_HEIGHT 25
+#define VGA_TEXT 0xC00B8000
 
 .section .data
 
@@ -13,7 +14,7 @@ cls:
 	pushl %ecx
 	pushl %edi
 
-	movl $0xB8000, %edi
+	movl $VGA_TEXT, %edi
 	movw $(15 << 8), %ax
 	movl $(VGA_WIDTH * VGA_HEIGHT), %ecx
 	rep stosw
@@ -64,7 +65,7 @@ putchar:
 	pushl %ebx
 	imull $VGA_WIDTH, tty_row, %ebx
 	addl tty_column, %ebx
-	movw %ax, 0xB8000(, %ebx, 2)
+	movw %ax, VGA_TEXT(, %ebx, 2)
 
 	incl tty_column
 	cmpl $VGA_WIDTH, tty_column
