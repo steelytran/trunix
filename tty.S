@@ -1,5 +1,5 @@
-.set VGA_WIDTH, 80
-.set VGA_HEIGHT, 25
+#define VGA_WIDTH 80
+#define VGA_HEIGHT 25
 
 .section .data
 

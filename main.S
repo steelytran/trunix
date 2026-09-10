@@ -1,0 +1,146 @@
+.section .data
+
+global_descriptor_table:
+/*
+ * GDT entry format
+ * limit 0:15 
+ * base 0:15 
+ * base 16:23 
+ * access 
+ * flags; limit 16:19 
+ * base 24:31 
+ */
+
+/* null descriptor */
+	.fill 1, 8, 0
+
+/* kernel space code segment */
+	.word	0xFFFF
+	.word	0x0000
+	.byte	0x00
+	.byte	0x9A
+	.byte	0xCF
+	.byte	0x00
+
+/* kernel space data segment */
+	.word	0xFFFF
+	.word	0x0000
+	.byte	0x00
+	.byte	0x92
+	.byte	0xCF
+	.byte	0x00
+
+/* user space code segment */
+	.word	0xFFFF
+	.word	0x0000
+	.byte	0x00
+	.byte	0xFA
+	.byte	0xCF
+	.byte	0x00
+
+/* user space data segment */
+	.word	0xFFFF
+	.word	0x0000
+	.byte	0x00
+	.byte	0xF2
+	.byte	0xCF
+	.byte	0x00
+
+/* task state segment */
+	.word	0x2068
+	.skip	2
+	.skip	1
+	.byte	0x89
+	.byte	0x00
+	.skip	1
+global_descriptor_table_end:
+
+gdtr:
+	.word global_descriptor_table_end - global_descriptor_table - 1 /* limit */
+	.long global_descriptor_table /* base */
+
+io_permission_bitmap:
+	.fill 0x2000, 1, 0	/* UNSAFE!! THIS IS ONLY TEMPORARY FOR TESTING */
+	.byte 0xFF		/* PERMITS EVERY PORT */
+
+task_state_segment:
+	.skip 0x68 
+
+.section .rodata
+
+mmap_string:
+	.asciz "Address: 0x%x, Length: 0x%x\n"
+
+.section .text
+.globl kernel_main
+kernel_main:
+	call cls
+/*
+ * initialise global descriptor table
+ */
+	cli
+
+	lgdt gdtr
+	ljmpl $0x08, $.reload_cs
+.reload_cs:
+	movw $0x10, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %gs
+	movw %ax, %ss
+
+	movl $task_state_segment, %eax
+
+	/* base 0:15 */
+	movw %ax, (global_descriptor_table + 0x28 + 2)
+
+	/* base 16:23 */
+	shrl $16, %eax
+	movb %al, (global_descriptor_table + 0x28 + 4)
+
+	/* base 24:31 */
+	movb %ah, (global_descriptor_table + 0x28 + 7)
+
+	movw $0x28, %ax
+	ltr %ax
+
+	movw $(io_permission_bitmap - task_state_segment), %ax
+	movw %ax, (task_state_segment + 0x66)
+
+/*
+ * setup 8259 PIC to offset hardware IRQs,
+ * so that they do not conflict with
+ * reserved i386 protected mode cpu IRQs.
+ */
+	movb $0x11, %al
+	outb %al, $0x20
+	outb %al, $0xA0
+
+/* vector offset */
+	movb $0x20, %al
+	outb %al, $0x21
+	movb $0x28, %al
+	outb %al, $0xA1
+
+/* cascade */
+	movb $0x04, %al
+	outb %al, $0x21
+	movb $0x02, %al
+	outb %al, $0xA1
+
+/* 8086 mode (and not 8080) */
+	movb $0x01, %al
+	outb %al, $0x21
+	outb %al, $0xA1
+
+/* mask */
+	movb $0xFD, %al
+	outb %al, $0x21
+	movb $0xFF, %al
+	outb %al, $0xA1
+
+	call setup_idt
+	sti
+
+	ret

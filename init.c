@@ -6,7 +6,7 @@
 #include <sys/trunix.h>
 #include <sys/tty.h>
 
-struct kinfo ki;
+struct kinfo k;
 
 struct kinfo *
 init_trunix(multiboot_info_t *mb_info, uint32_t magic)
@@ -21,7 +21,7 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 	if (!(mb_info->flags >> 6 & 1))
 		return NULL;
 
-	ki.mbi = *mb_info;
+	k.mbi = *mb_info;
 
 	for (m = 0; m < mb_info->mmap_length;
 	     m += mb_mmap->size + sizeof(mb_mmap->size)) {
@@ -29,18 +29,17 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 		mb_mmap = (multiboot_memory_map_t *)(mb_info->mmap_addr + m);
 
 		if (mb_mmap->type == MULTIBOOT_MEMORY_AVAILABLE)
-			ki.memmap[i++] = *mb_mmap;
+			k.memmap[i++] = *mb_mmap;
 
 	}
 
-	cls();
-	for (i = 0; ki.memmap[i].type == 1; ++i)
-		printf("addr: 0x%x, len: 0x%x\n",
-		    (uint32_t)ki.memmap[i].addr,
-		    (uint32_t)ki.memmap[i].len);
+	printf("asdfasdf\n");
 
 	/* setup paging */
 	pg_clear();
+	pg_identity();
+	k.free_pde_start = pg_mapkernel();
+	pg_enable();
 
-	return &ki;
+	return &k;
 }

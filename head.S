@@ -9,11 +9,6 @@
 	.long FLAGS
 	.long -(MULTIBOOT_HEADER_MAGIC + FLAGS) /* checksum */
 
-.section .bss
-.align 16
-	.skip 0x4000
-stack:
-
 .section .text
 .globl TRUNIX
 TRUNIX:
@@ -24,7 +19,16 @@ TRUNIX:
 
 	call init_trunix
 
+	pushl %eax
+	call kmain
+
 	cli
 1:
 	hlt
 	jmp 1b
+
+.section .bss
+.align 16
+	.skip 0x4000
+stack:
+
