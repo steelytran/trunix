@@ -1,9 +1,8 @@
-ENTRY(_start)
+ENTRY(TRUNIX)
 
 SECTIONS
 {
  	. = 1M; /* offset */
- 	_kernel_start = .;
 
 	.text : ALIGN(4K)
 	{
@@ -26,7 +25,4 @@ SECTIONS
 		*(COMMON)
 		*(.bss)
 	}
-	_kernel_end = .;
-	. = . + 128K;
-	_mem_start = ALIGN(4K);
 }

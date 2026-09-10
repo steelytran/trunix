@@ -1,69 +1,52 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#include <trunix/debug.h>
-#include <trunix/tty.h>
+#include <stdio.h>
+#include <sys/tty.h>
 
-static void
-printdec(int n)
+static char *
+itoa(int n, unsigned int base)
 {
-	int i = 0;
-	char buffer[12];
+	int j, i = 0;
+	char c;
+	static char s[33];
 	unsigned int un;
+	const static char hex[] = "0123456789abcdef";
+
+	if (n == 0) {
+		s[0] = '0';
+		return s;
+	}
 
 	if (n < 0) {
-		putchar('-');
+		s[i++] = '-';
 		un = (unsigned int)(-n);
-	} else
+		j = 1;
+	} else {
 		un = (unsigned int)n;
-
-	if (un == 0) {
-		putchar('0');
-		return;
+		j = 0;
 	}
 
 	while (un > 0) {
-		buffer[i++] = (un % 10) + '0';
-		un /= 10;
+		s[i++] = hex[un % base];
+		un /= base;
 	} 
 
-	while (i > 0) {
-		--i;
-		putchar(buffer[i]);
+	s[i] = '\0';
+
+	for (--i; j < i; --i, ++j) {
+		c = s[i];
+		s[i] = s[j];
+		s[j] = c;
 	}
+
+	return s;
 }
 
-static void
-printhex(unsigned int n, int ucase)
+int
+printf(const char *format, ...)
 {
-	int i = 0;
-	char buffer[8];
-	const char *hex;
-
-	const static char hex_u[] = "0123456789ABCDEF";
-	const static char hex_l[] = "0123456789abcdef";
-
-	hex = (ucase ? hex_u : hex_l);
-
-	if (n == 0) {
-		putchar('0');
-		return;
-	}
-
-	while (n > 0) {
-		buffer[i++] = hex[n % 16];
-		n /= 16;
-	} 
-
-	while (i > 0) {
-		--i;
-		putchar(buffer[i]);
-	}
-}
-
-void
-printk(const char *format, ...)
-{
+	char *c;
 	va_list args;
 
 	va_start(args, format);
@@ -73,19 +56,24 @@ printk(const char *format, ...)
 			++format;
 			if (*format == '\0')
 				break;
+			if (*format == '%') {
+				putchar(*format);
+				continue;
+			} else if (*format == 'd')
+				c = itoa(va_arg(args, int), 10);
+			else if (*format == 'x')
+				c = itoa(va_arg(args, int), 16);
+			else if (*format == 'b')
+				c = itoa(va_arg(args, int), 2);
 
-			if (*format == 'd') {
-				printdec(va_arg(args, int));
-				continue;
-			} if (*format == 'x') {
-				printhex(va_arg(args, int), 0);
-				continue;
-			} if (*format == 'X') {
-				printhex(va_arg(args, int), 1);
-				continue;
-			}
+			while (*c)
+				putchar(*c++);
+
+			continue;
 		}
 		putchar(*format);
 	}
+
 	va_end(args);
+	return 0;
 }

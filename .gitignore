@@ -3,4 +3,4 @@ isodir
 *.iso
 *.o
 trunix
-qemu
+qemu*

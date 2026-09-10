@@ -2,7 +2,7 @@ CC = clang
 AS = clang
 LD = ld.lld
 
-CFLAGS = -ffreestanding -nostdlib -O1 -g -Wall -Wextra -Wpedantic -std=c99
+CFLAGS = -ffreestanding -nostdlib -g -Wall -Wextra -Wpedantic -std=c99
 INCLUDE = -isystem include
 
 GRUB = i686-elf-grub
@@ -12,14 +12,12 @@ TARGET = -arch i386 -target i386-unknown-none-elf
 BIN = trunix
 
 OBJS =\
-io.S.o \
-interrupt.S.o \
-boot.S.o \
-kernel.S.o \
+head.S.o \
 tty.S.o \
 string.S.o \
-kernel.c.o \
 print.c.o \
+init.c.o \
+paging.c.o \
 
 .PHONY: all clean iso
 
