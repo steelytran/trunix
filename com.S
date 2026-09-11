@@ -1,6 +1,7 @@
 /* WIP */
 #define COM1 0x3F8
 
+.text
 .globl init_serial
 init_serial:
 	/* disable interrupts */

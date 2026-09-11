@@ -20,7 +20,7 @@ SECTIONS
 	__k_unpaged__kernel_unpaged_start = .;
 
 	.unpaged_text : { unpaged_*.o(.text) *(.multiboot)}
-	.unpaged_data ALIGN(4K) : { unpaged_*.o(.data) }
+	.unpaged_data ALIGN(4K) : { unpaged_*.o(.data .rodata*) }
 	.unpaged_bss ALIGN(4K) : { unpaged_*.o(.bss COMMON) }
 	__k_unpaged__kernel_unpaged_end = .;
 

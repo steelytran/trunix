@@ -33,8 +33,6 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 
 	}
 
-	printf("asdfasdf\n");
-
 	/* setup paging */
 	pg_clear();
 	pg_identity();

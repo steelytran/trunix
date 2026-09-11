@@ -59,7 +59,9 @@ printf(const char *format, ...)
 			if (*format == '%') {
 				putchar(*format);
 				continue;
-			} else if (*format == 'd')
+			}
+
+			else if (*format == 'd')
 				c = itoa(va_arg(args, int), 10);
 			else if (*format == 'x')
 				c = itoa(va_arg(args, int), 16);

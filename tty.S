@@ -1,13 +1,7 @@
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 
-.section .data
-
-tty_row:
-	.long 0
-tty_column:
-	.long 0
-
+.text
 .globl cls
 cls:
 	pushl %ecx
@@ -26,7 +20,6 @@ cls:
 	popl %ecx
 	ret 
 
-.section .text
 .globl movecursor
 movecursor:
 	pushl %eax
@@ -115,3 +108,9 @@ newline:
 end:
 	popl %eax
 	ret
+
+.data
+tty_row:
+	.long 0
+tty_column:
+	.long 0

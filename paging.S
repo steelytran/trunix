@@ -1,3 +1,4 @@
+.text
 .globl vm_enable_paging
 vm_enable_paging:
 

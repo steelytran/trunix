@@ -9,7 +9,7 @@
 	.long FLAGS
 	.long -(MULTIBOOT_HEADER_MAGIC + FLAGS) /* checksum */
 
-.section .text
+.text
 .globl TRUNIX
 TRUNIX:
 	mov $stack, %esp
@@ -27,7 +27,7 @@ TRUNIX:
 	hlt
 	jmp 1b
 
-.section .bss
+.bss
 .align 16
 	.skip 0x4000
 stack:
