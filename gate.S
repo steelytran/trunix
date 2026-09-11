@@ -1,24 +1,86 @@
 .macro IDT_ENTRY INT
-	.org interrupt_descriptor_table + (\INT * 8)
+	.org idt + (\INT * 8)
 .endm
 
 .macro SET_IDT_BASE INT ADDR
 	movl \ADDR, %eax
 
 	/* base 0:15 */
-	movw %ax, (interrupt_descriptor_table + (\INT * 8))
+	movw %ax, (idt + (\INT * 8))
 
 	/* base 16:31 */
 	shrl $16, %eax
-	movw %ax, (interrupt_descriptor_table + (\INT * 8) + 6)
+	movw %ax, (idt + (\INT * 8) + 6)
 .endm
 
-.section .data
-idtp:
-	.word (256 * 8) - 1
-	.long interrupt_descriptor_table
+.data
+gdt:
+/*
+ * GDT entry format
+ * limit 0:15 
+ * base 0:15 
+ * base 16:23 
+ * access 
+ * flags; limit 16:19 
+ * base 24:31 
+ */
 
-interrupt_descriptor_table:
+/* null descriptor */
+	.fill 1, 8, 0
+
+/* kernel space code segment */
+	.word	0xFFFF
+	.word	0x0000
+	.byte	0x00
+	.byte	0x9A
+	.byte	0xCF
+	.byte	0x00
+
+/* kernel space data segment */
+	.word	0xFFFF
+	.word	0x0000
+	.byte	0x00
+	.byte	0x92
+	.byte	0xCF
+	.byte	0x00
+
+/* user space code segment */
+	.word	0xFFFF
+	.word	0x0000
+	.byte	0x00
+	.byte	0xFA
+	.byte	0xCF
+	.byte	0x00
+
+/* user space data segment */
+	.word	0xFFFF
+	.word	0x0000
+	.byte	0x00
+	.byte	0xF2
+	.byte	0xCF
+	.byte	0x00
+
+/* task state segment */
+	.word	0x2068
+	.skip	2
+	.skip	1
+	.byte	0x89
+	.byte	0x00
+	.skip	1
+gdt_end:
+
+gdtr:
+	.word gdt_end - gdt - 1 /* limit */
+	.long gdt /* base */
+
+io_permission_bitmap:
+	.fill 0x2000, 1, 0	/* UNSAFE!! THIS IS ONLY TEMPORARY FOR TESTING */
+	.byte 0xFF		/* PERMITS EVERY PORT */
+
+tss:
+	.skip 0x68 
+
+idt:
 /* divide by zero */
 IDT_ENTRY 0x00
 	.skip	2
@@ -196,10 +258,60 @@ IDT_ENTRY 0x21
 	.byte	0x8E
 	.skip	2
 
-.section .text
+idtp:
+	.word (256 * 8) - 1
+	.long idt
 
-.globl setup_idt
-setup_idt:
+.text
+.globl init_gdt
+init_gdt:
+/*
+ * initialise global descriptor table
+ */
+	cli
+
+	lgdt gdtr
+	ljmpl $0x08, $.reload_cs
+.reload_cs:
+	movw $0x10, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %gs
+	movw %ax, %ss
+
+	sti
+	ret
+
+.globl init_tss
+init_tss:
+	cli
+
+	movl $tss, %eax
+
+	/* base 0:15 */
+	movw %ax, (gdt + 0x28 + 2)
+
+	/* base 16:23 */
+	shrl $16, %eax
+	movb %al, (gdt + 0x28 + 4)
+
+	/* base 24:31 */
+	movb %ah, (gdt + 0x28 + 7)
+
+	movw $0x28, %ax
+	ltr %ax
+
+	movw $(io_permission_bitmap - tss), %ax
+	movw %ax, (tss + 0x66)
+
+	sti
+	ret
+
+.globl init_idt
+init_idt:
+	cli
+
 	SET_IDT_BASE 0x00, $INT_0x00
 	SET_IDT_BASE 0x01, $INT_0x01
 	SET_IDT_BASE 0x02, $INT_0x02
@@ -222,9 +334,44 @@ setup_idt:
 	SET_IDT_BASE 0x14, $INT_0x14
 	SET_IDT_BASE 0x15, $INT_0x15
 
-	SET_IDT_BASE 0x21, $INT_0x21
 	lidt idtp
+	sti
 	ret
+
+/*
+ * setup 8259 PIC to offset hardware IRQs,
+ * so that they do not conflict with
+ * reserved i386 protected mode cpu IRQs.
+ */
+	movb $0x11, %al
+	outb %al, $0x20
+	outb %al, $0xA0
+
+/* vector offset */
+	movb $0x20, %al
+	outb %al, $0x21
+	movb $0x28, %al
+	outb %al, $0xA1
+
+/* cascade */
+	movb $0x04, %al
+	outb %al, $0x21
+	movb $0x02, %al
+	outb %al, $0xA1
+
+/* 8086 mode (and not 8080) */
+	movb $0x01, %al
+	outb %al, $0x21
+	outb %al, $0xA1
+
+/* mask */
+	movb $0xFD, %al
+	outb %al, $0x21
+	movb $0xFF, %al
+	outb %al, $0xA1
+
+	ret
+
 
 /* divide by zero */
 INT_0x00:
@@ -261,9 +408,6 @@ INT_0x07:
 /* double fault */
 INT_0x08:
 	cli
-	pushl $df_string
-	call printk
-	addl $4, %esp
 	hlt
 
 /* coprocessor segment overrun */
@@ -273,9 +417,6 @@ INT_0x09:
 /* invalid TSS */
 INT_0x0A:
 	cli
-	pushl $invalid_tss_string
-	call printk
-	addl $4, %esp
 	hlt
 
 /* segment not present */
@@ -289,21 +430,11 @@ INT_0x0C:
 /* general protection fault*/
 INT_0x0D:
 	cli
-	pushl $gpf_string
-	call printk
-	addl $4, %esp
 	hlt
 
 /* page fault */
 INT_0x0E:
 	popl %eax
-	movl %cr2, %ebx
-
-	pushl %ebx
-	pushl %eax
-	pushl $pf_string
-	call printk
-	addl $8, %esp
 	hlt
 
 /* x87 FPU error */
@@ -328,11 +459,4 @@ INT_0x14:
 
 /* control protection exception */
 INT_0x15:
-	iret
-
-/*
- * EXTERNAL INTERRUPTS
- */
-
-INT_0x21:
 	iret

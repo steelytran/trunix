@@ -12,18 +12,12 @@ TARGET = -arch i386 -target i386-unknown-none-elf
 
 BIN = trunix
 
-UNPAGED_OBJS = \
-head.S.o \
-tty.S.o \
-string.S.o \
-print.c.o \
-init.c.o \
-paging.c.o \
-paging.S.o \
+UNPAGED_OBJS = head.S.o tty.S.o string.S.o \
+print.c.o init.c.o paging.c.o paging.S.o \
 
 OBJS = \
 $(addprefix unpaged_,$(UNPAGED_OBJS)) \
-main.c.o
+main.c.o gate.S.o print.c.o tty.S.o
 
 .PHONY: all clean iso
 

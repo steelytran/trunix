@@ -20,4 +20,8 @@ int pg_mapkernel(void);
 void pg_enable(void);
 uint32_t vm_enable_paging(uint32_t *);
 
+void init_gdt(void);
+void init_tss(void);
+void init_idt(void);
+
 #endif

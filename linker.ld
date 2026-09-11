@@ -1,7 +1,7 @@
 ENTRY(__k_unpaged_TRUNIX)
 
 _kernel_physical_base = 0x00400000;
-_kernel_virt_base = 0xC0000000;
+_kernel_virt_base = 0xC0400000;
 _kernel_offset = (_kernel_virt_base - _kernel_physical_base);
 
 __k_unpaged__kernel_physical_base = _kernel_physical_base;
