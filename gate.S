@@ -1,3 +1,23 @@
+/*
+ * descriptor tables
+ * Copyright (C) 2026  spenna
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#define ASM_FILE
+
 .macro IDT_ENTRY INT
 	.org idt + (\INT * 8)
 .endm
@@ -73,7 +93,7 @@ gdtr:
 	.word gdt_end - gdt - 1 /* limit */
 	.long gdt /* base */
 
-io_permission_bitmap:
+iopb:
 	.fill 0x2000, 1, 0	/* UNSAFE!! THIS IS ONLY TEMPORARY FOR TESTING */
 	.byte 0xFF		/* PERMITS EVERY PORT */
 
@@ -302,7 +322,7 @@ init_tss:
 	movw $0x28, %ax
 	ltr %ax
 
-	movw $(io_permission_bitmap - tss), %ax
+	movw $(iopb - tss), %ax
 	movw %ax, (tss + 0x66)
 
 	sti
@@ -335,8 +355,6 @@ init_idt:
 	SET_IDT_BASE 0x15, $INT_0x15
 
 	lidt idtp
-	sti
-	ret
 
 /*
  * setup 8259 PIC to offset hardware IRQs,
@@ -370,6 +388,7 @@ init_idt:
 	movb $0xFF, %al
 	outb %al, $0xA1
 
+	sti
 	ret
 
 
@@ -416,8 +435,9 @@ INT_0x09:
 
 /* invalid TSS */
 INT_0x0A:
-	cli
+1:	cli
 	hlt
+	jmp 1b
 
 /* segment not present */
 INT_0x0B:
@@ -425,17 +445,22 @@ INT_0x0B:
 
 /* stack segment fault */
 INT_0x0C:
-	iret
+1:	cli
+	hlt
+	jmp 1b
 
 /* general protection fault*/
 INT_0x0D:
-	cli
+1:	cli
 	hlt
+	jmp 1b
 
 /* page fault */
 INT_0x0E:
 	popl %eax
+1:	cli
 	hlt
+	jmp 1b
 
 /* x87 FPU error */
 INT_0x10:

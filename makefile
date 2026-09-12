@@ -3,21 +3,24 @@ AS = clang
 LD = ld.lld
 OBJCOPY = llvm-objcopy
 
-CFLAGS = -ffreestanding -nostdlib -g -Wall -Wextra -Wpedantic -std=c99
 INCLUDE = -isystem include
+TARGET = -arch i386 -target i386-unknown-none-elf
+
+ASFLAGS = $(INCLUDE) $(TARGET)
+CFLAGS = -ffreestanding -nostdlib -Wall -Wextra -Wpedantic -g -std=c99\
+$(INCLUDE) $(TARGET)
 
 GRUB = i686-elf-grub
-
-TARGET = -arch i386 -target i386-unknown-none-elf
 
 BIN = trunix
 
 UNPAGED_OBJS = head.S.o tty.S.o string.S.o \
-print.c.o init.c.o paging.c.o paging.S.o \
+printf.c.o init.c.o mem.c.o paging.S.o util.c.o
 
 OBJS = \
 $(addprefix unpaged_,$(UNPAGED_OBJS)) \
-main.c.o gate.S.o print.c.o tty.S.o
+string.S.o printf.c.o main.c.o gate.S.o \
+mem.c.o paging.S.o tty.S.o util.c.o
 
 .PHONY: all clean iso
 
@@ -30,10 +33,10 @@ unpaged_%: %
 	$(OBJCOPY) --prefix-symbols=__k_unpaged_ $< $@
 
 %.S.o: %.S
-	$(AS) $(INCLUDE) $(TARGET) -c $< -o $@
+	$(AS) $(ASFLAGS) -c $< -o $@
 
 %.c.o: %.c
-	$(CC) $(INCLUDE) $(TARGET) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 iso: $(BIN)
 	mkdir -p isodir/boot/grub

@@ -1,5 +1,27 @@
+/*
+ * basic vga text mode driver
+ * Copyright (C) 2026  spenna
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#define ASM_FILE
+
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
+
+.extern _VGA_TEXT
 
 .text
 .globl cls
@@ -7,7 +29,7 @@ cls:
 	pushl %ecx
 	pushl %edi
 
-	movl $0xB8000, %edi
+	movl $_VGA_TEXT, %edi
 	movw $(15 << 8), %ax
 	movl $(VGA_WIDTH * VGA_HEIGHT), %ecx
 	rep stosw
@@ -57,7 +79,7 @@ putchar:
 	pushl %ebx
 	imull $VGA_WIDTH, tty_row, %ebx
 	addl tty_column, %ebx
-	movw %ax, 0xB8000(, %ebx, 2)
+	movw %ax, _VGA_TEXT(, %ebx, 2)
 
 	incl tty_column
 	cmpl $VGA_WIDTH, tty_column

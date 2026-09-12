@@ -1,4 +1,5 @@
 /* WIP */
+#define ASM_FILE
 #define COM1 0x3F8
 
 .text
