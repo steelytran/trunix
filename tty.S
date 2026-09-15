@@ -21,7 +21,7 @@
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 
-.extern _VGA_TEXT
+#define VGA_TEXT 0xC03FF000
 
 .text
 .globl cls
@@ -29,7 +29,7 @@ cls:
 	pushl %ecx
 	pushl %edi
 
-	movl $_VGA_TEXT, %edi
+	movl $VGA_TEXT, %edi
 	movw $(15 << 8), %ax
 	movl $(VGA_WIDTH * VGA_HEIGHT), %ecx
 	rep stosw
@@ -79,7 +79,7 @@ putchar:
 	pushl %ebx
 	imull $VGA_WIDTH, tty_row, %ebx
 	addl tty_column, %ebx
-	movw %ax, _VGA_TEXT(, %ebx, 2)
+	movw %ax, VGA_TEXT(, %ebx, 2)
 
 	incl tty_column
 	cmpl $VGA_WIDTH, tty_column

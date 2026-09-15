@@ -24,19 +24,22 @@
 #include <sys/trunix.h>
 #include <sys/tty.h>
 
+extern uint32_t _kernel_physical_base;
+extern uint32_t _kernel_unpaged_end;
+
 struct kinfo k;
 
 struct kinfo *
 init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 {
-	multiboot_uint32_t m;
+	int m;
 	multiboot_memory_map_t *mmap;
 
 	if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
-		return NULL;
+		panic();
 
 	if (!(mb_info->flags >> 6 & 1))
-		return NULL;
+		panic();
 
 	k.mbi = *mb_info;
 
@@ -52,10 +55,13 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 
 	}
 
+	cut_memmap(&k,
+	    (uintptr_t)&_kernel_physical_base,
+	    (uintptr_t)&_kernel_unpaged_end);
+
 	/* setup paging */
 	pg_clear();
 	pg_identity();
-	k.free_pde_start = pg_mapkernel();
 	pg_enable();
 
 	return &k;

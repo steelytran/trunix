@@ -33,10 +33,11 @@ itoa(int n, unsigned int base)
 
 	if (n == 0) {
 		s[0] = '0';
+		s[1] = '\0';
 		return s;
 	}
 
-	if (n < 0) {
+	if (n < 0 && base == 10) {
 		s[i++] = '-';
 		un = (unsigned int)(-n);
 		j = 1;
@@ -62,28 +63,30 @@ itoa(int n, unsigned int base)
 }
 
 int
-printf(const char *format, ...)
+printf(const char *fmt, ...)
 {
 	char *c;
 	va_list args;
 
-	va_start(args, format);
+	va_start(args, fmt);
 
-	for (; *format != '\0'; ++format) {
-		if (*format == '%') {
-			++format;
-			if (*format == '\0')
+	for (; *fmt != '\0'; ++fmt) {
+		if (*fmt == '%') {
+			++fmt;
+			if (*fmt == '\0')
 				break;
-			if (*format == '%') {
-				putchar(*format);
+			if (*fmt == '%') {
+				putchar(*fmt);
 				continue;
 			}
 
-			else if (*format == 'x')
+			else if (*fmt == 'x')
 				c = itoa(va_arg(args, int), 16);
-			else if (*format == 'd')
+			else if (*fmt == 'd')
 				c = itoa(va_arg(args, int), 10);
-			else if (*format == 'b')
+			else if (*fmt == 'o')
+				c = itoa(va_arg(args, int), 8);
+			else if (*fmt == 'b')
 				c = itoa(va_arg(args, int), 2);
 
 			while (*c)
@@ -91,7 +94,7 @@ printf(const char *format, ...)
 
 			continue;
 		}
-		putchar(*format);
+		putchar(*fmt);
 	}
 
 	va_end(args);

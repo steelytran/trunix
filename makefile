@@ -19,8 +19,8 @@ printf.c.o init.c.o mem.c.o paging.S.o util.c.o
 
 OBJS = \
 $(addprefix unpaged_,$(UNPAGED_OBJS)) \
-string.S.o printf.c.o main.c.o gate.S.o \
-mem.c.o paging.S.o tty.S.o util.c.o
+string.S.o printf.c.o main.c.o gate.S.o mem.c.o \
+paging.S.o tty.S.o util.c.o alloc.c.o
 
 .PHONY: all clean iso
 

@@ -22,8 +22,9 @@
 #include <sys/trunix.h>
 #include <sys/tty.h>
 
-struct kinfo *kernel_info;
+struct kinfo kernel_info;
 
+uint32_t *test = NULL;
 /*
  * kernel main
  */
@@ -34,10 +35,11 @@ kmain(struct kinfo *k)
 	init_tss();
 	init_idt();
 
-	memcpy(kernel_info, k, sizeof(struct kinfo));
+	memcpy(&kernel_info, k, sizeof(struct kinfo));
+	pg_clear_identity();
+	init_mem(&kernel_info);
 
 	cls();
-
 	printf("Welcome to Trunix!\n");
 	return;
 }

@@ -1,6 +1,11 @@
 #include <sys/trunix.h>
 #include <string.h>
 
+/*
+struct proc {
+};
+*/
+
 void
 switch_to(void (*t)(void))
 {

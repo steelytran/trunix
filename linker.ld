@@ -1,15 +1,12 @@
 ENTRY(__k_unpaged_TRUNIX)
 
-_kernel_physical_base = 0x00400000;
-_kernel_virt_base = 0xFF400000;
+_kernel_physical_base = 0x00100000;
+_kernel_virt_base = 0xC0100000;
 _kernel_offset = (_kernel_virt_base - _kernel_physical_base);
 
 __k_unpaged__kernel_physical_base = _kernel_physical_base;
 __k_unpaged__kernel_virt_base = _kernel_virt_base;
 __k_unpaged__kernel_offset = _kernel_offset;
-
-_VGA_TEXT = 0xB8000;
-__k_unpaged__VGA_TEXT = 0xB8000 + _kernel_offset;
 
 SECTIONS
 {
