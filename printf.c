@@ -67,6 +67,7 @@ printf(const char *fmt, ...)
 {
 	char *c;
 	va_list args;
+	int base;
 
 	va_start(args, fmt);
 
@@ -80,14 +81,23 @@ printf(const char *fmt, ...)
 				continue;
 			}
 
-			else if (*fmt == 'x')
-				c = itoa(va_arg(args, int), 16);
-			else if (*fmt == 'd')
-				c = itoa(va_arg(args, int), 10);
-			else if (*fmt == 'o')
-				c = itoa(va_arg(args, int), 8);
-			else if (*fmt == 'b')
-				c = itoa(va_arg(args, int), 2);
+			switch (*fmt) {
+			case 'X':
+			case 'x':
+				base = 16;
+				break;
+			case 'd':
+				base = 10;
+				break;
+			case 'o':
+				base = 8;
+				break;
+			case 'b':
+				base = 2;
+				break;
+			}
+
+			c = itoa(va_arg(args, int), base);
 
 			while (*c)
 				putchar(*c++);

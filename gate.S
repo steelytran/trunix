@@ -97,6 +97,7 @@ iopb:
 	.fill 0x2000, 1, 0	/* UNSAFE!! THIS IS ONLY TEMPORARY FOR TESTING */
 	.byte 0xFF		/* PERMITS EVERY PORT */
 
+.globl tss
 tss:
 	.skip 0x68 
 
@@ -418,7 +419,9 @@ INT_0x05:
 
 /* invalid opcode */
 INT_0x06:
-	iret
+	cli
+	hlt
+	jmp INT_0x06
 
 /* math coprocessor not available */
 INT_0x07:

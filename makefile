@@ -15,12 +15,13 @@ GRUB = i686-elf-grub
 BIN = trunix
 
 UNPAGED_OBJS = head.S.o tty.S.o string.S.o \
-printf.c.o init.c.o mem.c.o paging.S.o util.c.o
+printf.c.o init.c.o mem.c.o paging.S.o util.S.o
 
 OBJS = \
 $(addprefix unpaged_,$(UNPAGED_OBJS)) \
 string.S.o printf.c.o main.c.o gate.S.o mem.c.o \
-paging.S.o tty.S.o util.c.o alloc.c.o
+paging.S.o tty.S.o util.S.o alloc.c.o thread.c.o \
+context.S.o
 
 .PHONY: all clean iso
 

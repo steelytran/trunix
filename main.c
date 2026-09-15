@@ -24,7 +24,18 @@
 
 struct kinfo kernel_info;
 
-uint32_t *test = NULL;
+void
+thing1(void)
+{
+	printf("634lk536lkj4\n");
+}
+
+void
+thing2(void)
+{
+	printf("asdfasdasdf\n");
+}
+
 /*
  * kernel main
  */
@@ -41,5 +52,11 @@ kmain(struct kinfo *k)
 
 	cls();
 	printf("Welcome to Trunix!\n");
-	return;
+
+	init_thread(thing1);
+	create_kernel_thread(thing2);
+	thing1();
+
+	for(;;)
+		schedule();
 }
