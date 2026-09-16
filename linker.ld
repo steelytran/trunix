@@ -10,12 +10,6 @@ __k_unpaged__kernel_offset = _kernel_offset;
 
 SECTIONS
 {
-	/*
-	 * kernel's physical address is
-	 * offset by 4MiB to align with
-	 * page directory entires, makes
-	 * for easier identity mapping.
-	 */
  	. = _kernel_physical_base;
 	__k_unpaged__kernel_unpaged_start = .;
 

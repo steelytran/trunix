@@ -21,6 +21,7 @@
 #include <stdio.h>
 
 #include <sys/trunix.h>
+#include <sys/mman.h>
 
 #define pde2pt(pde) (uint32_t *)(0xFFC00000 + ((pde) << 12))
 

@@ -20,8 +20,8 @@ printf.c.o init.c.o mem.c.o paging.S.o util.S.o
 OBJS = \
 $(addprefix unpaged_,$(UNPAGED_OBJS)) \
 string.S.o printf.c.o main.c.o gate.S.o mem.c.o \
-paging.S.o tty.S.o util.S.o alloc.c.o thread.c.o \
-context.S.o
+paging.S.o tty.S.o util.S.o alloc.c.o kthread.c.o \
+switch.S.o
 
 .PHONY: all clean iso
 

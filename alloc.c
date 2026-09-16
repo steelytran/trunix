@@ -19,7 +19,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+
 #include <sys/trunix.h>
+#include <sys/mman.h>
 #include <sys/multiboot.h>
 
 /* bitmap manipulation macros */

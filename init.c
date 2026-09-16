@@ -22,6 +22,7 @@
 
 #include <sys/multiboot.h>
 #include <sys/trunix.h>
+#include <sys/mman.h>
 #include <sys/tty.h>
 
 extern uint32_t _kernel_physical_base;

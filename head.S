@@ -49,4 +49,3 @@ TRUNIX:
 .align 16
 	.skip 0x4000
 stack:
-

@@ -20,21 +20,11 @@
 #include <string.h>
 
 #include <sys/trunix.h>
+#include <sys/kthread.h>
+#include <sys/mman.h>
 #include <sys/tty.h>
 
 struct kinfo kernel_info;
-
-void
-thing1(void)
-{
-	printf("634lk536lkj4\n");
-}
-
-void
-thing2(void)
-{
-	printf("asdfasdasdf\n");
-}
 
 /*
  * kernel main
@@ -53,10 +43,6 @@ kmain(struct kinfo *k)
 	cls();
 	printf("Welcome to Trunix!\n");
 
-	init_thread(thing1);
-	create_kernel_thread(thing2);
-	thing1();
-
-	for(;;)
-		schedule();
+	kthread_init();
+	sched_init();
 }

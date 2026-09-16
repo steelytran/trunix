@@ -18,6 +18,8 @@
 
 #define ASM_FILE
 
+#define PIT_HZ(x) (1193182 / (x))
+
 .macro IDT_ENTRY INT
 	.org idt + (\INT * 8)
 .endm
@@ -115,7 +117,7 @@ IDT_ENTRY 0x01
 	.skip	2
 	.word	0x0008
 	.byte	0x00
-	.byte	0x8E
+	.byte	0x8F
 	.skip	2
 
 /* NMI interrupt */
@@ -131,7 +133,7 @@ IDT_ENTRY 0x03
 	.skip	2
 	.word	0x0008
 	.byte	0x00
-	.byte	0x8E
+	.byte	0x8F
 	.skip	2
 
 /* overflow */
@@ -272,7 +274,8 @@ IDT_ENTRY 0x15
 	.byte	0x8E
 	.skip	2
 
-IDT_ENTRY 0x21
+/* programmable interval timer */
+IDT_ENTRY 0x20
 	.skip	2
 	.word	0x0008
 	.byte	0x00
@@ -301,7 +304,6 @@ init_gdt:
 	movw %ax, %gs
 	movw %ax, %ss
 
-	sti
 	ret
 
 .globl init_tss
@@ -354,6 +356,7 @@ init_idt:
 	SET_IDT_BASE 0x13, $INT_0x13
 	SET_IDT_BASE 0x14, $INT_0x14
 	SET_IDT_BASE 0x15, $INT_0x15
+	SET_IDT_BASE 0x20, $INT_0x20
 
 	lidt idtp
 
@@ -384,10 +387,19 @@ init_idt:
 	outb %al, $0xA1
 
 /* mask */
-	movb $0xFD, %al
+	movb $0b11111110, %al
 	outb %al, $0x21
-	movb $0xFF, %al
+	movb $0b11111111, %al
 	outb %al, $0xA1
+
+/* setup PIT */
+	movb $0b00110100, %al
+	outb %al, $0x43
+
+	movw $PIT_HZ(100), %ax
+	outb %al, $0x40
+	movb %ah, %al
+	outb %al, $0x40
 
 	sti
 	ret
@@ -407,6 +419,8 @@ INT_0x02:
 
 /* breakpoint */
 INT_0x03:
+	pusha
+	popa
 	iret
 
 /* overflow */
@@ -487,4 +501,16 @@ INT_0x14:
 
 /* control protection exception */
 INT_0x15:
+	iret
+
+/* programmable interval timer */
+INT_0x20:
+	pushal
+
+	movb $0x20, %al
+	outb %al, $0x20
+
+	call schedule
+
+	popal
 	iret
