@@ -1,5 +1,5 @@
 /*
- * c string functions
+ * libc string.h - asm
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify

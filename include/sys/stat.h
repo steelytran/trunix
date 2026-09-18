@@ -1,5 +1,5 @@
 /*
- * teletype header
+ * file status
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,10 +16,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _SYS_TTY_H
-#define _SYS_TTY_H
+#ifndef _STAT_H
+#define _STAT_H
 
-void movecursor(unsigned int);
-void cls(void);
+#include <sys/types.h>
+
+struct stat {
+	dev_t st_dev;
+	ino_t st_ino;
+	mode_t st_mode;
+	nlink_t st_nlink;
+	uid_t st_uid;
+	gid_t st_gid;
+	dev_t st_rdev;
+	off_t st_size;
+
+	time_t st_atim;
+	time_t st_mtim;
+	time_t st_ctim;
+	
+	blksize_t st_blksize;
+	blkcnt_t st_blocks;
+};
 
 #endif

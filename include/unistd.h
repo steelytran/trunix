@@ -1,5 +1,5 @@
 /*
- * teletype header
+ * unix standard
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,10 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _SYS_TTY_H
-#define _SYS_TTY_H
+#ifndef _UNISTD_H
+#define _UNISTD_H
 
-void movecursor(unsigned int);
-void cls(void);
+#include <sys/types.h>
+
+int access(const char *, int);
+int close(int);
+ssize_t read(int, void *, size_t);
+ssize_t write(int, const void *, size_t);
 
 #endif

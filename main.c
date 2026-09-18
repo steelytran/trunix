@@ -16,32 +16,47 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <string.h>
 
 #include <sys/trunix.h>
 #include <sys/kthread.h>
 #include <sys/mman.h>
 #include <sys/tty.h>
+#include <stdio.h>
+#include <string.h>
 
-struct kinfo kernel_info;
+struct kinfo k;
 
 /*
  * kernel main
  */
 void
-kmain(struct kinfo *k)
+kmain(struct kinfo *kernel_info)
 {
+	uint32_t *fs;
+	int i;
+
 	init_gdt();
 	init_tss();
 	init_idt();
 
-	memcpy(&kernel_info, k, sizeof(struct kinfo));
+	memcpy(&k, kernel_info, sizeof(struct kinfo));
+
 	pg_clear_identity();
-	init_mem(&kernel_info);
+	init_mem(&k);
 
 	cls();
 	printf("Welcome to Trunix!\n");
+
+	ustar2fs(&k);
+
+	for (i = ROOT_INO; i < k.ino_n; ++i) {
+		printf("%d: ", i);
+		printf("%o ", k.ino_table[i].mode);
+		printf("%d ", k.ino_table[i].uid);
+		printf("%d ", k.ino_table[i].gid);
+		printf("%d ", k.ino_table[i].size);
+		printf("%s\n", k.dir_table[i].name);
+	}
 
 	kthread_init();
 	sched_init();

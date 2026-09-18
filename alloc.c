@@ -16,13 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-#include <string.h>
-#include <stdio.h>
-
-#include <sys/trunix.h>
 #include <sys/mman.h>
 #include <sys/multiboot.h>
+#include <sys/trunix.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 /* bitmap manipulation macros */
 #define bit_set(x, n)	((x) |= (1 << (n)))
@@ -32,11 +32,11 @@
 static uint32_t page_bitmap[0x100000 / 32];
 static unsigned int last_page;
 
-void *alloc_mem(unsigned int);
-void free_mem(void *, size_t);
+void *mmap(void *, size_t, int, int, int, off_t);
+void munmap(void *, size_t);
 void init_mem(struct kinfo *);
 
-static inline uintptr_t alloc_pages(int, int);
+static inline uintptr_t alloc_pages(int, int, int);
 static inline void free_pages(int, int);
 
 static inline void
@@ -75,7 +75,7 @@ free_pages(int base, int page_n)
 }
 
 static inline uintptr_t
-alloc_pages(int base, int page_n)
+alloc_pages(int base, int page_n, int prot)
 {
 	int i;
 	uintptr_t p_base, v_start, v_end;
@@ -86,34 +86,44 @@ alloc_pages(int base, int page_n)
 	p_base = base << 12;
 	v_start = phys2virt(p_base);
 	v_end = phys2virt(i << 12);
-	pg_map(p_base, v_start, v_end);
+	pg_map(p_base, v_start, v_end, prot);
 
 	return v_start;
 }
 
 void *
-alloc_mem(unsigned int page_n)
+mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)
 {
 	uint32_t i;
-	unsigned int free = 0;
+	unsigned int page_n, free = 0;
 
-	if (page_n == 0)
-		return NULL;
+	if (len == 0)
+		goto err;
+
+	if (prot > (PROT_READ | PROT_WRITE) || prot < 0)
+		goto err;
+
+	page_n = pg_roundup(len) >> 12;
+
+	if (addr != NULL)
+		return (void *)
+		alloc_pages(((int)addr + off) >> 12, page_n, prot);
 
 	for (i = 0; i <= last_page; ++i) {
-
 		if (pg_bitmap_isused(i)) {
 			free = 0;
 			continue;
 		} if (++free == page_n)
 			return (void *)
-			    alloc_pages(i + 1 - page_n, page_n);
+			alloc_pages(i + 1 - page_n, page_n, prot);
 	}
+
+err:
 	return NULL;
 }
 
 void
-free_mem(void *addr, size_t len)
+munmap(void *addr, size_t len)
 {
 	int page_n = len >> 12;
 	unsigned int pg = virt2phys(addr) >> 12;

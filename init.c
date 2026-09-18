@@ -35,6 +35,7 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 {
 	int m;
 	multiboot_memory_map_t *mmap;
+	multiboot_module_t *fs;
 
 	if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
 		panic();
@@ -59,6 +60,10 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 	cut_memmap(&k,
 	    (uintptr_t)&_kernel_physical_base,
 	    (uintptr_t)&_kernel_unpaged_end);
+
+	fs = (multiboot_module_t *)mb_info->mods_addr;
+	k.initrd_addr = fs->mod_start;
+	k.initrd_len = fs->mod_end - fs->mod_start;
 
 	/* setup paging */
 	pg_clear();

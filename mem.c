@@ -42,7 +42,7 @@ void pg_clear(void);
 void pg_identity(void);
 void pg_clear_identity(void);
 void pg_enable(void);
-void pg_map(uint32_t, uint32_t, uint32_t);
+void pg_map(uint32_t, uint32_t, uint32_t, int);
 void pg_free(uint32_t, uint32_t);
 
 uint32_t *pt_alloc(uint32_t *p);
@@ -204,7 +204,7 @@ pg_enable(void)
 
 
 void
-pg_map(uint32_t p_addr, uint32_t v_start, uint32_t v_end)
+pg_map(uint32_t p_addr, uint32_t v_start, uint32_t v_end, int prot)
 {
 	uint32_t *pt;
 	uint32_t frame, ph;
@@ -221,11 +221,11 @@ pg_map(uint32_t p_addr, uint32_t v_start, uint32_t v_end)
 
 		if (!(virtpagedir[pde] & 1)) {
 			pt = pt_alloc(&ph);
-			virtpagedir[pde] = (ph & 0xFFFFF000) | 0b00000111;
+			virtpagedir[pde] = (ph & 0xFFFFF000) | prot;
 		} else
 			pt = pde2pt(pde);
 
-		pt[pte] = (frame & 0xFFFFF000) | 0b00000111;
+		pt[pte] = (frame & 0xFFFFF000) | prot;
 		p_addr += 0x1000;
 	}
 

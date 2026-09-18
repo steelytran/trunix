@@ -1,5 +1,5 @@
 /*
- * teletype header
+ * posix file control
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,10 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _SYS_TTY_H
-#define _SYS_TTY_H
+#ifndef _FCNTL_H
+#define _FCNTL_H
 
-void movecursor(unsigned int);
-void cls(void);
+#include <stdarg.h>
+#include <sys/types.h>
+
+int creat(const char*, mode_t);
+int fcntl(int, int, ...);
+int open(const char*, int, ...);
 
 #endif

@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <sys/tty.h>
 
-static char *
+char *
 itoa(int n, unsigned int base)
 {
 	int j, i = 0;
@@ -79,6 +79,12 @@ printf(const char *fmt, ...)
 			if (*fmt == '%') {
 				putchar(*fmt);
 				continue;
+			} if (*fmt == 's') {
+				c = va_arg(args, char *);
+				while (*c)
+					putchar(*c++);
+
+				continue;
 			}
 
 			switch (*fmt) {
@@ -99,7 +105,7 @@ printf(const char *fmt, ...)
 
 			c = itoa(va_arg(args, int), base);
 
-			while (*c)
+			while (*c != '\0')
 				putchar(*c++);
 
 			continue;

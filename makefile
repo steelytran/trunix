@@ -1,3 +1,19 @@
+# the trunix operating system.
+# Copyright (C) 2026  spenna
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 CC = clang
 AS = clang
 LD = ld.lld
@@ -21,11 +37,12 @@ OBJS = \
 $(addprefix unpaged_,$(UNPAGED_OBJS)) \
 string.S.o printf.c.o main.c.o gate.S.o mem.c.o \
 paging.S.o tty.S.o util.S.o alloc.c.o kthread.c.o \
-switch.S.o
+switch.S.o initrd.c.o string.c.o
 
 .PHONY: all clean iso
 
-all: $(BIN)
+#all: $(BIN)
+all: iso
 
 $(BIN): $(OBJS)
 	$(LD) -T linker.ld $^ -o $@
@@ -43,6 +60,7 @@ iso: $(BIN)
 	mkdir -p isodir/boot/grub
 	cp $< isodir/boot/$<
 	cp grub.cfg isodir/boot/grub/grub.cfg
+	tar --numeric-owner -cvf isodir/boot/initrd -C initrd .
 	$(GRUB)-mkrescue -o $<.iso isodir
 
 clean:

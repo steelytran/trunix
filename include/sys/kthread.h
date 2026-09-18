@@ -1,20 +1,21 @@
-#ifndef _KTHREAD_H
-#define _KTHREAD_H
+#ifndef _SYS_KTHREAD_H
+#define _SYS_KTHREAD_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
-struct thread {
+
+struct task {
 	uint32_t *esp;
 	uint32_t *esp0;
 	uint32_t *cr3;
 	int32_t pid;
 	uint8_t state;
-	struct thread *next;
+	struct task *next;
 };
 
 void kthread_init(void);
-void switch_to(struct thread *, struct thread *);
+void switch_to(struct task *, struct task *);
 int kthread_create(void (*)(void));
 void kthread_exit(int);
 void schedule(void);

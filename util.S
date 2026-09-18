@@ -1,3 +1,21 @@
+/*
+ * asm utilities for c
+ * Copyright (C) 2026  spenna
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #define ASM_FILE
 
 .macro ARG_LONG_GET FUNC REG
@@ -17,6 +35,7 @@
 	ret
 .endm
 
+.text
 	ARG_LONG_GET read_cr4, %cr4
 	ARG_LONG_GET read_cr3, %cr3
 	ARG_LONG_GET read_cr2, %cr2
@@ -41,7 +60,6 @@
 	ARG_LONG_SET write_ecx, %ecx
 	ARG_LONG_SET write_edx, %edx
 
-.text
 .globl panic
 panic:
 1:

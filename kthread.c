@@ -1,3 +1,21 @@
+/*
+ * kernel threads
+ * Copyright (C) 2026  spenna
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -5,13 +23,13 @@
 #include <sys/kthread.h>
 #include <sys/mman.h>
 
-struct thread *curthread;
+struct task *curthread;
 
 extern uint32_t read_cr3(void);
 extern uint32_t read_esp(void);
 
 void kthread_init(void);
-void switch_to(struct thread *, struct thread *);
+void switch_to(struct task *, struct task *);
 int kthread_create(void (*)(void));
 void kthread_exit(int);
 void yield(void);
@@ -34,7 +52,7 @@ swapper(void)
 void
 sched_init(void)
 {
-	struct thread boot_task;
+	struct task boot_task;
 
 /*
  * overwriting the structure as it is
@@ -47,17 +65,17 @@ sched_init(void)
 void
 kthread_init(void)
 {
-	struct thread *idle;
-	uintptr_t addr = (uintptr_t)alloc_mem(1);
+	struct task *idle;
+	uintptr_t addr = (uintptr_t)mmap(NULL, 0x1000, PROT_WRITE, 0, 0, 0);
 
-	idle = (struct thread *)(addr + 0x1000 - sizeof(struct thread));
+	idle = (struct task *)(addr + 0x1000 - sizeof(struct task));
 	idle->esp = (uint32_t *)idle - 6;
 	idle->cr3 = (uint32_t *)read_cr3();
 	idle->pid = 0;
 	idle->state = TASK_RUNNING;
 	idle->next = idle;
 
-	/* ret stack frame */
+	/* stack frame */
 	idle->esp[4] = (uint32_t)swapper;
 	idle->esp[5] = (uint32_t)kthread_exit;
 
@@ -67,17 +85,17 @@ kthread_init(void)
 int
 kthread_create(void (*eip)(void))
 {
-	struct thread *task;
-	uintptr_t addr = (uintptr_t)alloc_mem(2);
+	struct task *task;
+	uintptr_t addr = (uintptr_t)mmap(NULL, 0x2000, PROT_WRITE, 0, 0, 0);
 
 	cli();
 
-	task = (struct thread *)(addr + 0x2000 - sizeof(struct thread));
+	task = (struct task *)(addr + 0x2000 - sizeof(struct task));
 	task->esp = (uint32_t *)task - 6;
 	task->cr3 = (uint32_t *)read_cr3();
 	task->state = TASK_READY;
 
-	/* iret stack frame */
+	/* stack frame */
 	task->esp[4] = (uint32_t)eip;
 	task->esp[5] = (uint32_t)kthread_exit;
 
@@ -93,7 +111,7 @@ kthread_create(void (*eip)(void))
 void
 kthread_exit(int ecode)
 {
-	struct thread *np = curthread;
+	struct task *np = curthread;
 
 	cli();
 
@@ -109,8 +127,8 @@ kthread_exit(int ecode)
 void
 schedule(void)
 {
-	struct thread *prev = curthread;
-	struct thread *next = curthread->next;
+	struct task *prev = curthread;
+	struct task *next = curthread->next;
 
 	cli();
 
@@ -119,15 +137,4 @@ schedule(void)
 		switch_to(prev, next);
 	}
 
-}
-
-static inline void
-context_switch(struct thread *prev, struct thread *next)
-{
-	/* 
-	 * TODO: switch page directory here,
-	 * if different than cr3 register.
-	 */
-
-	//switch_to(prev, next, prev);
 }
