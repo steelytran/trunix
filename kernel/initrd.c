@@ -1,5 +1,5 @@
 /*
- * virtual file system
+ * initial ramdisk
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,23 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/trunix.h>
+#include <trunix/trunix.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
-
-unsigned long ino_cnt = 0;
-
-struct inode *
-dirlookup(struct inode *dir, char *name)
-{
-	struct dirent de;
-	return NULL;
-}
 
 static int
 oct2int(unsigned char *str, int len)
@@ -53,9 +41,9 @@ oct2int(unsigned char *str, int len)
 }
 
 void
-ustar2fs(struct kinfo *k)
+load_initrd(struct kinfo *k)
 {
-	void *file;
+	void *node;
 
 	unsigned int i = 2;
 	void *tar = mmap((void *)k->initrd_addr,
@@ -67,51 +55,52 @@ ustar2fs(struct kinfo *k)
 	uint8_t *p = tar;
 	size_t len = k->initrd_len;
 
-	struct inode *inodes = mmap(NULL, 0x2000, PROT_WRITE, 0, 0, 0);
-	struct dirent *dirents = mmap(NULL, 0x2000, PROT_WRITE, 0, 0, 0);
+	struct inode *in = mmap(NULL, 0x2000, PROT_WRITE, 0, 0, 0);
+	struct tnode *tn = mmap(NULL, 0x2000, PROT_WRITE, 0, 0, 0);
 
-	k->ino_table = inodes;
-	k->dir_table = dirents;
+	k->inodes = in;
+	k->tnodes = tn;
 
 	for (; p < (uint8_t *)tar + len; p += 512) {
 		if (memcmp("ustar\00000", &p[257], 8) != 0)
 			continue;
 
-		dirents[i].ino_id = i;
-		strncpy(dirents[i].name, &p[0], DIRSIZ);
+		tn[i].ino_id = i;
+		strncpy(tn[i].name, &p[1], DIRSIZ);
 
-		inodes[i].mode = oct2int(&p[100], 6);
-		inodes[i].uid = oct2int(&p[108], 6);
-		inodes[i].gid = oct2int(&p[116], 6);
-		inodes[i].size = oct2int(&p[124], 11);
+		in[i].mode = oct2int(&p[100], 6);
+		in[i].uid = oct2int(&p[108], 6);
+		in[i].gid = oct2int(&p[116], 6);
+		in[i].size = oct2int(&p[124], 11);
+		in[i].m_time = oct2int(&p[136], 11);
 
 		switch (p[156]) {
 		case '0': /* FALLTHROUGH */
 		case '1':
-			inodes[i].type = FILE;
+			in[i].type = VFILE;
 			break;
 		case '2':
-			inodes[i].type = LINK;
+			in[i].type = VLINK;
 			break;
 		case '3':
-			inodes[i].type = CHAR;
+			in[i].type = VCHAR;
 			break;
 		case '4':
-			inodes[i].type = BLK;
+			in[i].type = VBLK;
 			break;
 		case '5':
-			inodes[i].type = DIR;
+			in[i].type = VDIR;
 			break;
 		case '6':
-			inodes[i].type = FIFO;
+			in[i].type = VFIFO;
 			break;
 		}
 
-		inodes[i].major = oct2int(&p[329], 7);
-		inodes[i].minor = oct2int(&p[337], 7);
+		in[i].major = oct2int(&p[329], 7);
+		in[i].minor = oct2int(&p[337], 7);
 
-		if (inodes[i].size > 0 && inodes[i].type == FILE)
-			inodes[i].addr = (uintptr_t)&p[512];
+		if (in[i].size > 0)
+			in[i].addr = (uintptr_t)&p[512];
 
 		++i;
 	}

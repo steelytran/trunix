@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <sys/trunix.h>
+#include <trunix/trunix.h>
 #include <sys/kthread.h>
 #include <sys/mman.h>
 
@@ -34,13 +34,6 @@ int kthread_create(void (*)(void));
 void kthread_exit(int);
 void yield(void);
 void sched_init(void);
-
-enum {
-	TASK_RUNNING,
-	TASK_READY,
-	TASK_BLOCKED,
-	EXIT_DEAD
-};
 
 static void
 swapper(void)
@@ -72,7 +65,7 @@ kthread_init(void)
 	idle->esp = (uint32_t *)idle - 6;
 	idle->cr3 = (uint32_t *)read_cr3();
 	idle->pid = 0;
-	idle->state = TASK_RUNNING;
+	idle->state = READY;
 	idle->next = idle;
 
 	/* stack frame */
@@ -93,7 +86,7 @@ kthread_create(void (*eip)(void))
 	task = (struct task *)(addr + 0x2000 - sizeof(struct task));
 	task->esp = (uint32_t *)task - 6;
 	task->cr3 = (uint32_t *)read_cr3();
-	task->state = TASK_READY;
+	task->state = READY;
 
 	/* stack frame */
 	task->esp[4] = (uint32_t)eip;
@@ -115,7 +108,7 @@ kthread_exit(int ecode)
 
 	cli();
 
-	curthread->state = EXIT_DEAD;
+	curthread->state = DEAD;
 	while (np->next != curthread)
 		np = np->next;
 
@@ -132,9 +125,19 @@ schedule(void)
 
 	cli();
 
-	if (prev != next) {
-		curthread = next;
-		switch_to(prev, next);
+	while (next->state != READY) {
+		if (next == prev) {
+			sti();
+			return;
+		}
+
+		next = next->next;
 	}
 
+	if (prev->state == RUNNING)
+		prev->state = READY;
+
+	curthread = next;
+	curthread->state = RUNNING;
+	switch_to(prev, next);
 }

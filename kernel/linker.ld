@@ -26,14 +26,17 @@ __k_unpaged__kernel_physical_base = _kernel_physical_base;
 __k_unpaged__kernel_virt_base = _kernel_virt_base;
 __k_unpaged__kernel_offset = _kernel_offset;
 
+__k_unpaged_VGA_TEXT = 0xB8000;
+VGA_TEXT = 0xC03FF000;
+
 SECTIONS
 {
  	. = _kernel_physical_base;
 	__k_unpaged__kernel_unpaged_start = .;
 
-	.unpaged_text : { unpaged_*.o(.text) *(.multiboot)}
-	.unpaged_data ALIGN(4K) : { unpaged_*.o(.data .rodata*) }
-	.unpaged_bss ALIGN(4K) : { unpaged_*.o(.bss COMMON) }
+	.unpaged_text : { kernel/unpaged_*.o(.text) *(.multiboot)}
+	.unpaged_data ALIGN(4K) : { kernel/unpaged_*.o(.data .rodata*) }
+	.unpaged_bss ALIGN(4K) : { kernel/unpaged_*.o(.bss COMMON) }
 
 	__k_unpaged__kernel_unpaged_end = .;
 	_kernel_unpaged_end =

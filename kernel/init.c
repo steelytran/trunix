@@ -20,10 +20,10 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include <trunix/trunix.h>
 #include <sys/multiboot.h>
-#include <sys/trunix.h>
 #include <sys/mman.h>
-#include <sys/tty.h>
+#include <trunix/tty.h>
 
 extern uint32_t _kernel_physical_base;
 extern uint32_t _kernel_unpaged_end;

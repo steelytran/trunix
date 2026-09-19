@@ -16,11 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/tty.h>
 #include <stdarg.h>
 #include <stdint.h>
-
 #include <stdio.h>
-#include <sys/tty.h>
 
 char *
 itoa(int n, unsigned int base)

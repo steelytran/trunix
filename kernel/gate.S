@@ -282,6 +282,14 @@ IDT_ENTRY 0x20
 	.byte	0x8E
 	.skip	2
 
+/* programmable interval timer */
+IDT_ENTRY 0x21
+	.skip	2
+	.word	0x0008
+	.byte	0x00
+	.byte	0x8E
+	.skip	2
+
 idtp:
 	.word (256 * 8) - 1
 	.long idt
@@ -357,6 +365,7 @@ init_idt:
 	SET_IDT_BASE 0x14, $INT_0x14
 	SET_IDT_BASE 0x15, $INT_0x15
 	SET_IDT_BASE 0x20, $INT_0x20
+	SET_IDT_BASE 0x21, $INT_0x21
 
 	lidt idtp
 
@@ -387,7 +396,7 @@ init_idt:
 	outb %al, $0xA1
 
 /* mask */
-	movb $0b11111110, %al
+	movb $0b11111100, %al
 	outb %al, $0x21
 	movb $0b11111111, %al
 	outb %al, $0xA1
@@ -401,116 +410,9 @@ init_idt:
 	movb %ah, %al
 	outb %al, $0x40
 
+/* setup PS2 keyboard */
+	movb $0xF4, %al
+	outb %al, $0x60
+
 	sti
 	ret
-
-
-/* divide by zero */
-INT_0x00:
-	iret
-
-/* debug exception */
-INT_0x01:
-	iret
-
-/* NMI interrupt */
-INT_0x02:
-	iret
-
-/* breakpoint */
-INT_0x03:
-	pusha
-	popa
-	iret
-
-/* overflow */
-INT_0x04:
-	iret
-
-/* BOUND range exceeded */
-INT_0x05:
-	iret
-
-/* invalid opcode */
-INT_0x06:
-	cli
-	hlt
-	jmp INT_0x06
-
-/* math coprocessor not available */
-INT_0x07:
-	iret
-
-/* double fault */
-INT_0x08:
-	cli
-	hlt
-
-/* coprocessor segment overrun */
-INT_0x09:
-	iret
-
-/* invalid TSS */
-INT_0x0A:
-1:	cli
-	hlt
-	jmp 1b
-
-/* segment not present */
-INT_0x0B:
-	iret
-
-/* stack segment fault */
-INT_0x0C:
-1:	cli
-	hlt
-	jmp 1b
-
-/* general protection fault*/
-INT_0x0D:
-1:	cli
-	hlt
-	jmp 1b
-
-/* page fault */
-INT_0x0E:
-	popl %eax
-1:	cli
-	hlt
-	jmp 1b
-
-/* x87 FPU error */
-INT_0x10:
-	iret
-
-/* alignment check */
-INT_0x11:
-	iret
-
-/* machine check */
-INT_0x12:
-	iret
-
-/* SIMD floating point exception */
-INT_0x13:
-	iret
-
-/* virtualization exception */
-INT_0x14:
-	iret
-
-/* control protection exception */
-INT_0x15:
-	iret
-
-/* programmable interval timer */
-INT_0x20:
-	pushal
-
-	movb $0x20, %al
-	outb %al, $0x20
-
-	call schedule
-
-	popal
-	iret

@@ -14,41 +14,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-CC = clang
-AS = clang
-LD = ld.lld
-OBJCOPY = llvm-objcopy
+CC := clang
+AS := clang
+LD := ld.lld
+OBJCOPY := llvm-objcopy
 
-INCLUDE = -isystem include
-TARGET = -arch i386 -target i386-unknown-none-elf
+include kernel/Makefile.inc
 
-ASFLAGS = $(INCLUDE) $(TARGET)
-CFLAGS = -ffreestanding -nostdlib -Wall -Wextra -Wpedantic -g -std=c99\
-$(INCLUDE) $(TARGET)
+INCLUDE := -isystem include
+TARGET := -arch i386 -target i386-unknown-none-elf
 
-GRUB = i686-elf-grub
+LDFLAGS := -T kernel/linker.ld 
+ASFLAGS := $(INCLUDE) $(TARGET)
+CFLAGS := -ffreestanding -nostdlib -Wall -Wextra \
+	 -Wpedantic -g -std=c99 $(INCLUDE) $(TARGET)
 
-BIN = trunix
+GRUB := i686-elf-grub
 
-UNPAGED_OBJS = head.S.o tty.S.o string.S.o \
-printf.c.o init.c.o mem.c.o paging.S.o util.S.o
+BIN := trunix
 
-OBJS = \
-$(addprefix unpaged_,$(UNPAGED_OBJS)) \
-string.S.o printf.c.o main.c.o gate.S.o mem.c.o \
-paging.S.o tty.S.o util.S.o alloc.c.o kthread.c.o \
-switch.S.o initrd.c.o string.c.o
+OBJS ?=
 
-.PHONY: all clean iso
+.PHONY: all clean iso qemu
 
-#all: $(BIN)
 all: iso
 
 $(BIN): $(OBJS)
-	$(LD) -T linker.ld $^ -o $@
-
-unpaged_%: %
-	$(OBJCOPY) --prefix-symbols=__k_unpaged_ $< $@
+	$(LD) $(LDFLAGS) $^ -o $@
 
 %.S.o: %.S
 	$(AS) $(ASFLAGS) -c $< -o $@
@@ -60,11 +52,18 @@ iso: $(BIN)
 	mkdir -p isodir/boot/grub
 	cp $< isodir/boot/$<
 	cp grub.cfg isodir/boot/grub/grub.cfg
-	tar --numeric-owner -cvf isodir/boot/initrd -C initrd .
+	#tar --numeric-owner -cvf isodir/boot/initrd -C initrd .
 	$(GRUB)-mkrescue -o $<.iso isodir
+
+qemu: iso
+	qemu-system-i386 \
+	-cdrom trunix.iso \
+	-display cocoa,zoom-to-fit=on \
+	-no-reboot -no-shutdown
 
 clean:
 	rm -rf isodir
 	rm -f *.o
+	rm -f */*.o
 	rm -f $(BIN)
 	rm -f $(BIN).iso

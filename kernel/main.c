@@ -1,5 +1,5 @@
 /*
- * teletype header
+ * The trunix operating system.
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,10 +16,40 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _SYS_TTY_H
-#define _SYS_TTY_H
+#include <trunix/trunix.h>
+#include <trunix/tty.h>
+#include <sys/kthread.h>
+#include <sys/mman.h>
+#include <stdio.h>
+#include <string.h>
 
-void movecursor(unsigned int);
-void cls(void);
+#include "kbd.h"
 
-#endif
+struct kinfo k;
+
+/*
+ * kernel main
+ */
+void
+kmain(struct kinfo *kernel_info)
+{
+	uint32_t *fs;
+	int i;
+
+	init_gdt();
+	init_tss();
+	init_idt();
+
+	memcpy(&k, kernel_info, sizeof(struct kinfo));
+
+	pg_clear_identity();
+	init_mem(&k);
+
+	cls();
+
+	//load_initrd(&k);
+
+	kthread_init();
+	init_kbd();
+	sched_init();
+}

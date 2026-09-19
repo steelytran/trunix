@@ -21,6 +21,17 @@
 
 #include <stdarg.h>
 
+#define stdin ((struct __FILE *)__stdin)
+#define stdout ((struct __FILE *)__stdout)
+#define stderr ((struct __FILE *)__stderr)
+
+typedef struct __FILE {
+	char *_ptr;
+	char *_buf_base;
+	char *_buf_end;
+	short _fd;
+} FILE;
+
 void putchar(char);
 int printf(const char *, ...);
 

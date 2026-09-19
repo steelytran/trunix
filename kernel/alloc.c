@@ -18,7 +18,7 @@
 
 #include <sys/mman.h>
 #include <sys/multiboot.h>
-#include <sys/trunix.h>
+#include <trunix/trunix.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -32,7 +32,7 @@
 static uint32_t page_bitmap[0x100000 / 32];
 static unsigned int last_page;
 
-void *mmap(void *, size_t, int, int, int, off_t);
+void *mmap(void *, size_t, int, int, int, int);
 void munmap(void *, size_t);
 void init_mem(struct kinfo *);
 
@@ -92,7 +92,7 @@ alloc_pages(int base, int page_n, int prot)
 }
 
 void *
-mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)
+mmap(void *addr, size_t len, int prot, int flags, int fd, int off)
 {
 	uint32_t i;
 	unsigned int page_n, free = 0;
@@ -100,7 +100,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)
 	if (len == 0)
 		goto err;
 
-	if (prot > (PROT_READ | PROT_WRITE) || prot < 0)
+	if (prot & ~(PROT_READ | PROT_WRITE))
 		goto err;
 
 	page_n = pg_roundup(len) >> 12;
@@ -149,8 +149,8 @@ init_mem(struct kinfo *k)
 			continue;
 
 		for (i = k->memmap[m].addr;
-		    i <= k->memmap[m].addr + k->memmap[m].len;
-		    i += 0x1000)
+		     i <= k->memmap[m].addr + k->memmap[m].len;
+		     i += 0x1000)
 			pg_bitmap_free(i >> 12);
 	}
 

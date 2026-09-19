@@ -21,7 +21,7 @@
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 
-#define VGA_TEXT 0xC03FF000
+.extern VGA_TEXT
 
 .text
 .globl cls
@@ -72,6 +72,9 @@ putchar:
 	pushl %eax
 	cmpb $'\n', 8(%esp)
 	je newline
+
+	cmpb $'\b', 8(%esp)
+	je back
 
 	movb $0b00001111, %ah
 	movb 8(%esp), %al
@@ -127,6 +130,23 @@ newline:
 	call movecursor
 	addl $4, %esp
 
+back:
+	movl tty_column, %eax
+	testl tty_column, %eax
+	jz end
+
+	decl %eax
+	movl %eax, tty_column
+
+	pushl %ebx
+	imull $VGA_WIDTH, tty_row, %ebx
+	addl %eax, %ebx
+
+	pushl %ebx
+	call movecursor
+	addl $4, %esp
+
+	popl %ebx
 end:
 	popl %eax
 	ret

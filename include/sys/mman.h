@@ -20,8 +20,7 @@
 #define _SYS_MMAN_H
 
 #include <sys/multiboot.h>
-#include <sys/trunix.h>
-#include <sys/types.h>
+#include <trunix/trunix.h>
 #include <stdint.h>
 #include <stddef.h>
 
