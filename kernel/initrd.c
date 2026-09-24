@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <trunix/trunix.h>
+#include <sys/trunix.h>
 #include <sys/mman.h>
 #include <stdio.h>
 #include <stddef.h>

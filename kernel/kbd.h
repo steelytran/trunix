@@ -17,11 +17,4 @@ static unsigned char normalmap[256] = {
 	'2',  '3',  '0',  '.',  NIL,  NIL,  NIL,  NIL,
 };
 
-extern uint8_t keybuffer[12];
-extern unsigned short keysp;
-
-//void got_char(uint8_t *);
-void init_kbd(void);
-void got_char(void);
-
 #endif

@@ -1,5 +1,5 @@
-#include <sys/kthread.h>
-#include <trunix/trunix.h>
+#include <sys/proc.h>
+#include <sys/trunix.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

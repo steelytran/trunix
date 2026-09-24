@@ -17,18 +17,9 @@
  */
 
 #define ASM_FILE
-#include <sys/kthread.h>
+#include <sys/proc.h>
 
 .data
-.extern kbdstate
-
-.globl keybuffer
-keybuffer:
-	.fill 12
-
-.globl keysp
-keysp:
-	.word 0
 
 .text
 /* divide by zero */
@@ -157,7 +148,7 @@ INT_0x20:
 	movb $0x20, %al
 	outb %al, $0x20
 
-	call schedule
+	call yield
 
 	popal
 	iret
@@ -165,6 +156,8 @@ INT_0x20:
 /* ps2 keyboard */
 .globl INT_0x21
 INT_0x21:
+	iret
+
 	pushl %eax
 	pushl %ebx
 
@@ -181,13 +174,6 @@ INT_0x21:
 
 	/* scancode */
 	andb $0x7f, %ah
-
-	incl keysp
-	movl keysp, %ebx
-	movb %ah, keybuffer(%ebx)
-
-	movl kbdstate, %ebx
-	movl $READY, (%ebx)
 
 1:
 	popl %ebx

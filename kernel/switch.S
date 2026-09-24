@@ -21,14 +21,14 @@
 #define ESP 0
 #define ESP0 4
 #define CR3 8
-#define STATE 12
-#define NEXT 13
+#define PID 12
+#define STATE 16
 
 #define PREV_TASK 20
 #define NEXT_TASK 24
 
 .text
-/* void switch_to(struct task *prev, struct task *next); */
+/* void switch_to(struct proc *prev, struct proc *next); */
 .globl switch_to
 switch_to:
 	pushl %ebx
@@ -36,15 +36,27 @@ switch_to:
 	pushl %edi
 	pushl %ebp
 
-	/* save prev task sp */
 	movl PREV_TASK(%esp), %esi
 	movl %esp, ESP(%esi)
 
-	/* next task sp */
 	movl NEXT_TASK(%esp), %edi
 	movl ESP(%edi), %esp
 
+	movl %cr3, %ecx
+	cmpl %ecx, CR3(%edi)
+	je 1f
+
+	movl CR3(%edi), %ecx
+	movl %ecx, %cr3
+
 1:
+	movl ESP0(%edi), %ecx
+	testl %ecx, %ecx
+	jz 2f
+
+	movl %ecx, (tss + 4)
+
+2:
 	popl %ebp
 	popl %edi
 	popl %esi

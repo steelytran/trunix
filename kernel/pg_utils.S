@@ -19,6 +19,19 @@
 #define ASM_FILE
 
 .text
+
+.globl swap_cr3
+swap_cr3:
+	movl %cr3, %eax
+	cmpl %eax, 4(%esp)
+	je 1f
+
+	movl 4(%esp), %eax
+	movl %eax, %cr3
+	jmp 1f
+1:
+	ret
+
 .globl flush_tlb
 flush_tlb:
 	movl %cr3, %eax

@@ -19,24 +19,32 @@ AS := clang
 LD := ld.lld
 OBJCOPY := llvm-objcopy
 
-include kernel/Makefile.inc
-
 INCLUDE := -isystem include
 TARGET := -arch i386 -target i386-unknown-none-elf
 
 LDFLAGS := -T kernel/linker.ld 
 ASFLAGS := $(INCLUDE) $(TARGET)
 CFLAGS := -ffreestanding -nostdlib -Wall -Wextra \
-	 -Wpedantic -g -std=c99 $(INCLUDE) $(TARGET)
+	 -Wpedantic -g3 -O0 -std=c99 $(INCLUDE) $(TARGET)
 
 GRUB := i686-elf-grub
 
 BIN := trunix
 
-OBJS ?=
+UNPAGED_OBJS = head.S.o init.c.o paging.c.o pg_utils.S.o util.S.o string.S.o
+
+K_OBJS = \
+$(addprefix unpaged_,$(UNPAGED_OBJS)) \
+string.S.o printf.c.o main.c.o interrupt.S.o \
+gate.S.o paging.c.o pg_utils.S.o tty.S.o util.S.o \
+mem.c.o proc.c.o switch.S.o string.c.o switch.S.o
+
+OBJS = $(addprefix kernel/,$(K_OBJS))
+
+kernel/unpaged_%: kernel/%
+	$(OBJCOPY) --prefix-symbols=__k_unpaged_ $< $@
 
 .PHONY: all clean iso qemu
-
 all: iso
 
 $(BIN): $(OBJS)
@@ -60,6 +68,15 @@ qemu: iso
 	-cdrom trunix.iso \
 	-display cocoa,zoom-to-fit=on \
 	-no-reboot -no-shutdown
+
+qemu-gdb: iso
+	sh -c 'set -m; \
+	qemu-system-i386 \
+	-cdrom trunix.iso \
+	-display cocoa,zoom-to-fit=on \
+	-no-reboot -no-shutdown \
+	-s -S & \
+	lldb trunix -o "gdb-remote 1234"'
 
 clean:
 	rm -rf isodir
