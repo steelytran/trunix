@@ -38,25 +38,17 @@
 #define phys2virt(x) ((uintptr_t)(x) | KERNEL_OFFSET)
 #endif
 
-struct memspace {
-	uint32_t *pd, *pt;
-};
-
 uint32_t pg_roundup(uint32_t);
 uint32_t pg_rounddown(uint32_t);
 void add_memmap(struct kinfo *, uint64_t, uint64_t);
 void cut_memmap(struct kinfo *, uintptr_t, uintptr_t);
 
-void pg_clear(void);
+void pg_clear(struct kinfo *);
 void pg_identity(void);
 void pg_clear_identity(void);
 void pg_enable(void);
 void pg_map(uint32_t, uint32_t, uint32_t, int);
 void pg_free(uint32_t, uint32_t);
-
-struct memspace alloc_mm(void);
-
-uint32_t *pt_alloc(uint32_t *p);
 
 void flush_tlb(void);
 uint32_t vm_enable_paging(uint32_t *);

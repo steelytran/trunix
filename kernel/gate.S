@@ -99,10 +99,6 @@ iopb:
 	.fill 0x2000, 1, 0	/* UNSAFE!! THIS IS ONLY TEMPORARY FOR TESTING */
 	.byte 0xFF		/* PERMITS EVERY PORT */
 
-.globl tss
-tss:
-	.skip 0x68 
-
 idt:
 /* divide by zero */
 IDT_ENTRY 0x00
@@ -294,6 +290,10 @@ idtp:
 	.word (256 * 8) - 1
 	.long idt
 
+.globl tss
+tss:
+	.skip 0x68
+
 .text
 .globl init_gdt
 init_gdt:
@@ -415,5 +415,4 @@ init_idt:
 	movb $0xF4, %al
 	outb %al, $0x60
 
-	sti
 	ret

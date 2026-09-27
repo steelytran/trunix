@@ -37,20 +37,36 @@ uint32_t kernel_len = (uint32_t)&_kernel_size;
 static uint32_t pagedir[1024] __attribute__((aligned(0x1000)));
 uint32_t* virtpagedir;
 
-void pg_clear(void);
+void pg_clear(struct kinfo *);
 void pg_identity(void);
 void pg_clear_identity(void);
 void pg_enable(void);
 void pg_map(uint32_t, uint32_t, uint32_t, int);
 void pg_free(uint32_t, uint32_t);
 
-uint32_t *pt_alloc(uint32_t *p);
+static uint32_t *pt_alloc(uint32_t *p);
 
 void add_memmap(struct kinfo *, uint64_t, uint64_t);
 void cut_memmap(struct kinfo *, uintptr_t, uintptr_t);
 
 uint32_t pg_roundup(uint32_t);
 uint32_t pg_rounddown(uint32_t);
+
+static uint32_t *
+pt_alloc(uint32_t *p)
+{
+	uint32_t *t;
+	static uint32_t pagetable[6][1024] __attribute__((aligned(0x1000)));
+	static int used_pt_n = 0;
+
+	if (used_pt_n >= 6)
+		panic();
+
+	t = pagetable[used_pt_n++];
+	*p = virt2phys(t);
+
+	return t;
+}
 
 /*
  * round value up to page boundaries.
@@ -149,9 +165,10 @@ cut_memmap(struct kinfo *k, uintptr_t start, uintptr_t end)
 }
 
 void
-pg_clear(void)
+pg_clear(struct kinfo *k)
 {
 	memsetl(pagedir, 0x00000002, sizeof(pagedir));
+	k->pagedir = (uint32_t)pagedir;
 	return;
 }
 
@@ -181,15 +198,15 @@ pg_identity(void)
 void
 pg_clear_identity(void)
 {
-	uint32_t i;
+	uint32_t i = 0;
 	uint32_t *pt;
 
 	pagedir[0] = PG_RW;
 	pt = pde2pt(768);
 
-	for (i = 0; i < (kernel_physical_start >> 12); ++i)
+	while (i < ((kernel_physical_start) >> 12))
 		/* r/w, not present*/
-		pt[i] = PG_RW;
+		pt[i++] = PG_RW;
 
 	virtpagedir = (uint32_t *)0xFFFFF000;
 	flush_tlb();
@@ -249,18 +266,3 @@ pg_free(uint32_t start, uint32_t end)
 	flush_tlb();
 }
 
-uint32_t *
-pt_alloc(uint32_t *p)
-{
-	uint32_t *t;
-	static uint32_t pagetable[6][1024] __attribute__((aligned(0x1000)));
-	static int used_pt_n = 0;
-
-	if (used_pt_n >= 6)
-		panic();
-
-	t = pagetable[used_pt_n++];
-	*p = virt2phys(t);
-
-	return t;
-}

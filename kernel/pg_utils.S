@@ -19,7 +19,6 @@
 #define ASM_FILE
 
 .text
-
 .globl swap_cr3
 swap_cr3:
 	movl %cr3, %eax

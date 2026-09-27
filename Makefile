@@ -31,13 +31,14 @@ GRUB := i686-elf-grub
 
 BIN := trunix
 
-UNPAGED_OBJS = head.S.o init.c.o paging.c.o pg_utils.S.o util.S.o string.S.o
+UNPAGED_OBJS = head.S.o trunix_init.c.o paging.c.o pg_utils.S.o util.S.o string.S.o
 
 K_OBJS = \
 $(addprefix unpaged_,$(UNPAGED_OBJS)) \
 string.S.o printf.c.o main.c.o interrupt.S.o \
 gate.S.o paging.c.o pg_utils.S.o tty.S.o util.S.o \
-mem.c.o proc.c.o switch.S.o string.c.o switch.S.o
+mem.c.o proc.c.o switch.S.o string.c.o switch.S.o \
+init.c.o
 
 OBJS = $(addprefix kernel/,$(K_OBJS))
 

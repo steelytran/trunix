@@ -27,6 +27,7 @@ void *memcpyw(void *restrict dst, const void *restrict src, size_t n);
 void *memset(void *b, int c, size_t len);
 void *memsetw(void *b, int c, size_t len);
 void *memsetl(void *b, int c, size_t len);
+void *memmove(void *, const void *, size_t);
 
 int memcmp(const void *, const void *, size_t);
 

@@ -26,13 +26,6 @@
 #include "kbd.h"
 
 struct kinfo k;
-extern void init_console(void);
-
-void
-test(void)
-{
-	for (;;);
-}
 
 /*
  * kernel main
@@ -40,18 +33,15 @@ test(void)
 void
 kmain(struct kinfo *kernel_info)
 {
-	struct proc *p;
 	init_gdt();
 	init_tss();
 	init_idt();
 
 	memcpy(&k, kernel_info, sizeof(struct kinfo));
-	pg_clear_identity();
 
-	cls();
+	pg_clear_identity();
 	init_mem(&k);
 
-	p = proc_create((uint32_t)test, 0x1000, 0x1000);
-	enqueue(p);
-	init_proc();
+	enqueue(initsys());
+	init_sched();
 }

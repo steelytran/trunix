@@ -19,37 +19,63 @@
 #ifndef _SYS_PROC_H
 #define _SYS_PROC_H
 
-#ifdef ASM_FILE
-#define RUNNING 0
-#define READY 1
-#define BLOCKED 2
-#define DEAD 3
-#endif
-
-#ifndef ASM_FILE
 #include <sys/queue.h>
+#include <sys/cdefs.h>
 #include <stddef.h>
 #include <stdint.h>
 
 enum procstate {RUNNING, READY, SLEEPING, BLOCKED, DEAD};
 
+struct trapframe {
+/* in order of pushal instruction */
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t ebp;
+	uint32_t __esp; /* unused */
+	uint32_t ebx;
+	uint32_t edx;
+	uint32_t ecx;
+	uint32_t eax;
+
+	uint32_t gs;
+	uint32_t fs;
+	uint32_t es;
+	uint32_t ds;
+
+/* iret stack frame */
+	uint32_t eip;
+	uint32_t cs;
+	uint32_t eflags;
+ /* unused by cpl 0 -> 0 switch */
+	uint32_t esp;
+	uint32_t ss;
+};
+
+struct context {
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t ebp;
+	uint32_t ebx;
+	uint32_t eip;
+};
+
 struct proc {
-	uint32_t *esp;
-	uint32_t *esp0;
-	uint32_t *cr3;
 	uint32_t pid;
+	uint32_t cr3;
+	uintptr_t kstack;
+	struct context *context;
+	struct trapframe *tf;
 	enum procstate state;
-	void *chan; /* sleep if non zero */
 	TAILQ_ENTRY(proc) entries;
 };
 
-void switch_to(struct proc *, struct proc *);
-void init_proc(void);
+void switch_to(struct context **, struct context *);
 void enqueue(struct proc *);
 void dequeue(void);
 void yield(void);
-struct proc *proc_create(uint32_t, uint32_t, uint32_t);
+__dead void scheduler(void);
 struct proc *kthread_create(void (*)(void));
+void init_sched(void);
+struct proc *initsys(void);
 
-#endif
 #endif

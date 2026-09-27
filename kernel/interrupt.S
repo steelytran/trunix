@@ -17,7 +17,6 @@
  */
 
 #define ASM_FILE
-#include <sys/proc.h>
 
 .data
 
@@ -143,6 +142,10 @@ INT_0x15:
 /* programmable interval timer */
 .globl INT_0x20
 INT_0x20:
+	pushl %ds
+	pushl %es
+	pushl %fs
+	pushl %gs
 	pushal
 
 	movb $0x20, %al
@@ -151,6 +154,10 @@ INT_0x20:
 	call yield
 
 	popal
+	popl %gs
+	popl %fs
+	popl %es
+	popl %ds
 	iret
 
 /* ps2 keyboard */
