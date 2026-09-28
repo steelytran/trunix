@@ -286,6 +286,14 @@ IDT_ENTRY 0x21
 	.byte	0x8E
 	.skip	2
 
+/* syscall */
+IDT_ENTRY 0x80
+	.skip	2
+	.word	0x0008
+	.byte	0x00
+	.byte	0xEE
+	.skip	2
+
 idtp:
 	.word (256 * 8) - 1
 	.long idt
@@ -316,8 +324,6 @@ init_gdt:
 
 .globl init_tss
 init_tss:
-	cli
-
 	movl $tss, %eax
 
 	/* base 0:15 */
@@ -336,13 +342,10 @@ init_tss:
 	movw $(iopb - tss), %ax
 	movw %ax, (tss + 0x66)
 
-	sti
 	ret
 
 .globl init_idt
 init_idt:
-	cli
-
 	SET_IDT_BASE 0x00, $INT_0x00
 	SET_IDT_BASE 0x01, $INT_0x01
 	SET_IDT_BASE 0x02, $INT_0x02
@@ -367,6 +370,8 @@ init_idt:
 
 	SET_IDT_BASE 0x20, $INT_0x20
 	SET_IDT_BASE 0x21, $INT_0x21
+
+	SET_IDT_BASE 0x80, $INT_0x80
 
 	lidt idtp
 
@@ -397,7 +402,7 @@ init_idt:
 	outb %al, $0xA1
 
 /* mask */
-	movb $0b11111100, %al
+	movb $0b11111110, %al
 	outb %al, $0x21
 	movb $0b11111111, %al
 	outb %al, $0xA1

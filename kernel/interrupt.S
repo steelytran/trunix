@@ -16,9 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define ASM_FILE
+.extern fork
 
-.data
+.bss
+	.lcomm STAT_SYSCALL, 4
 
 .text
 /* divide by zero */
@@ -186,3 +187,76 @@ INT_0x21:
 	popl %ebx
 	popl %eax
 	iret
+
+/* syscall */
+.globl INT_0x80
+INT_0x80:
+	pushl %ds
+	pushl %es
+	pushl %fs
+	pushl %gs
+	pushal
+
+	call *tbl_syscall(, %eax, 4)
+
+	popal
+	popl %gs
+	popl %fs
+	popl %es
+	popl %ds
+	iret
+
+tbl_syscall:
+	.long restart /* 0 */
+	.long exit /* 1 */
+	.long fork /* 2 */
+	.long read /* 3 */
+	.long write /* 4 */
+	.long open /* 5 */
+	.long close /* 6 */
+	.long waitpid /* 7 */
+	.long creat /* 8 */
+	.long link /* 9 */
+	.long unlink /* 10 */
+	.long execve /* 11 */
+
+/*
+ * temporary for unimplemented syscalls
+ */
+restart:
+	ret
+
+exit:
+	ret
+
+/*
+fork:
+	ret
+*/
+
+read:
+	ret
+
+write:
+	ret
+
+open:
+	ret
+
+close:
+	ret
+
+waitpid:
+	ret
+
+creat:
+	ret
+
+link:
+	ret
+
+unlink:
+	ret
+
+execve:
+	ret

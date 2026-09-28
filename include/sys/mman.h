@@ -26,6 +26,8 @@
 
 #define KERNEL_OFFSET 0xC0000000
 
+#define pde2pt(pde) (uint32_t *)(0xFFC00000 + ((pde) << 12))
+
 #define PG_P 0x01
 #define PG_RW 0x02
 #define PG_US 0x04
@@ -43,7 +45,7 @@ uint32_t pg_rounddown(uint32_t);
 void add_memmap(struct kinfo *, uint64_t, uint64_t);
 void cut_memmap(struct kinfo *, uintptr_t, uintptr_t);
 
-void pg_clear(struct kinfo *);
+void pg_clear(void);
 void pg_identity(void);
 void pg_clear_identity(void);
 void pg_enable(void);
@@ -56,5 +58,7 @@ uint32_t vm_enable_paging(uint32_t *);
 void *mmap(void *, size_t, int);
 void munmap(void *, size_t);
 void init_mem(struct kinfo *);
+void alloc_pt(uint32_t *, uint32_t, size_t, uint32_t, int);
 
+uint32_t *cpykvm(void);
 #endif

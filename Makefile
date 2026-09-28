@@ -18,16 +18,17 @@ CC := clang
 AS := clang
 LD := ld.lld
 OBJCOPY := llvm-objcopy
+GRUB := i686-elf-grub
 
 INCLUDE := -isystem include
 TARGET := -arch i386 -target i386-unknown-none-elf
 
 LDFLAGS := -T kernel/linker.ld 
 ASFLAGS := $(INCLUDE) $(TARGET)
-CFLAGS := -ffreestanding -nostdlib -Wall -Wextra \
-	 -Wpedantic -g3 -O0 -std=c99 $(INCLUDE) $(TARGET)
-
-GRUB := i686-elf-grub
+CFLAGS := -fno-pic -fno-pie -fno-builtin -mno-mmx -mno-sse \
+-fno-stack-protector -mgeneral-regs-only -mno-sse2 -mno-3dnow \
+-static -fno-strict-aliasing -ffreestanding -nostdlib -Wall \
+-Wextra -Wpedantic -glldb -g3 -std=c99 $(INCLUDE) $(TARGET)
 
 BIN := trunix
 
@@ -38,14 +39,14 @@ $(addprefix unpaged_,$(UNPAGED_OBJS)) \
 string.S.o printf.c.o main.c.o interrupt.S.o \
 gate.S.o paging.c.o pg_utils.S.o tty.S.o util.S.o \
 mem.c.o proc.c.o switch.S.o string.c.o switch.S.o \
-init.c.o
+init.S.o
 
 OBJS = $(addprefix kernel/,$(K_OBJS))
 
 kernel/unpaged_%: kernel/%
 	$(OBJCOPY) --prefix-symbols=__k_unpaged_ $< $@
 
-.PHONY: all clean iso qemu
+.PHONY: all clean iso qemu qemu-gdb
 all: iso
 
 $(BIN): $(OBJS)
@@ -61,7 +62,6 @@ iso: $(BIN)
 	mkdir -p isodir/boot/grub
 	cp $< isodir/boot/$<
 	cp grub.cfg isodir/boot/grub/grub.cfg
-	#tar --numeric-owner -cvf isodir/boot/initrd -C initrd .
 	$(GRUB)-mkrescue -o $<.iso isodir
 
 qemu: iso

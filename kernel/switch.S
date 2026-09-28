@@ -19,7 +19,10 @@
 #define ASM_FILE
 
 .text
-/* void switch_to(struct proc *prev, struct proc *next); */
+/*
+ * void
+ * switch_to(struct context **prev, struct context *next)
+ */
 .globl switch_to
 switch_to:
 	movl 4(%esp), %eax /* old thread */

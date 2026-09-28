@@ -27,6 +27,8 @@
 
 struct kinfo k;
 
+extern void test2(void);
+
 /*
  * kernel main
  */

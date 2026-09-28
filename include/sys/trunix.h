@@ -28,8 +28,9 @@
 
 #define MAXMEMMAP 32
 
-#define cli() __asm__ volatile("cli");
-#define sti() __asm__ volatile("sti");
+#define cli() __asm__ volatile("cli")
+#define sti() __asm__ volatile("sti")
+#define hlt() __asm__ volatile("hlt")
 
 struct task_state_segment {
 	uint32_t prev_tss;
@@ -69,7 +70,6 @@ struct kinfo {
 	size_t mmap_len;
 	uint32_t mem_high_phys;
 	uintptr_t free_pde_start;
-	uint32_t pagedir;
 };
 
 void panic(void);

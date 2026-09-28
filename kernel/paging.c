@@ -22,8 +22,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define pde2pt(pde) (uint32_t *)(0xFFC00000 + ((pde) << 12))
-
 extern uint32_t _kernel_physical_base;
 extern uint32_t _kernel_unpaged_end;
 extern uint32_t _kernel_virt_base;
@@ -37,14 +35,14 @@ uint32_t kernel_len = (uint32_t)&_kernel_size;
 static uint32_t pagedir[1024] __attribute__((aligned(0x1000)));
 uint32_t* virtpagedir;
 
-void pg_clear(struct kinfo *);
+void pg_clear(void);
 void pg_identity(void);
 void pg_clear_identity(void);
 void pg_enable(void);
 void pg_map(uint32_t, uint32_t, uint32_t, int);
 void pg_free(uint32_t, uint32_t);
 
-static uint32_t *pt_alloc(uint32_t *p);
+static uint32_t *pt_alloc(uint32_t *);
 
 void add_memmap(struct kinfo *, uint64_t, uint64_t);
 void cut_memmap(struct kinfo *, uintptr_t, uintptr_t);
@@ -165,10 +163,9 @@ cut_memmap(struct kinfo *k, uintptr_t start, uintptr_t end)
 }
 
 void
-pg_clear(struct kinfo *k)
+pg_clear(void)
 {
 	memsetl(pagedir, 0x00000002, sizeof(pagedir));
-	k->pagedir = (uint32_t)pagedir;
 	return;
 }
 
@@ -218,9 +215,8 @@ pg_enable(void)
 	vm_enable_paging(pagedir);
 }
 
-
 void
-pg_map(uint32_t p_addr, uint32_t v_start, uint32_t v_end, int prot)
+pg_map(uint32_t p_addr, uint32_t v_start, uint32_t v_end, int flags)
 {
 	uint32_t *pt;
 	uint32_t frame, ph;
@@ -237,11 +233,11 @@ pg_map(uint32_t p_addr, uint32_t v_start, uint32_t v_end, int prot)
 
 		if (!(virtpagedir[pde] & 1)) {
 			pt = pt_alloc(&ph);
-			virtpagedir[pde] = (ph & 0xFFFFF000) | prot;
+			virtpagedir[pde] = (ph & 0xFFFFF000) | flags;
 		} else
 			pt = pde2pt(pde);
 
-		pt[pte] = (frame & 0xFFFFF000) | prot;
+		pt[pte] = (frame & 0xFFFFF000) | flags;
 		p_addr += 0x1000;
 	}
 

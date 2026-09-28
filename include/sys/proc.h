@@ -60,12 +60,17 @@ struct context {
 };
 
 struct proc {
-	uint32_t pid;
+	int pid;
 	uint32_t cr3;
-	uintptr_t kstack;
+	uintptr_t esp0;
+
+	size_t len;
+
 	struct context *context;
 	struct trapframe *tf;
+
 	enum procstate state;
+	struct proc *parent;
 	TAILQ_ENTRY(proc) entries;
 };
 
@@ -73,7 +78,6 @@ void switch_to(struct context **, struct context *);
 void enqueue(struct proc *);
 void dequeue(void);
 void yield(void);
-__dead void scheduler(void);
 struct proc *kthread_create(void (*)(void));
 void init_sched(void);
 struct proc *initsys(void);

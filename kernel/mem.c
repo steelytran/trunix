@@ -29,12 +29,16 @@
 #define bit_unset(x, n)	((x) &= ~(1 << (n)))
 #define bit_isset(x, n)	((x) & (1 << (n)))
 
+static uint32_t *kpagedir;
+
 static uint32_t page_bitmap[0x100000 / 32];
 static unsigned int last_page;
 
 void *mmap(void *, size_t, int);
 void munmap(void *, size_t);
 void init_mem(struct kinfo *);
+uint32_t *cpykvm(void);
+void alloc_pt(uint32_t *, uint32_t, size_t, uint32_t, int);
 
 static inline uintptr_t alloc_pages(int, int, int);
 static inline void free_pages(int, int);
@@ -152,5 +156,39 @@ init_mem(struct kinfo *k)
 	}
 
 	last_page = i >> 12;
+	kpagedir = (uint32_t *)phys2virt(read_cr3());
 	return;
+}
+
+uint32_t *
+cpykvm(void)
+{
+	uint32_t *pd = mmap(NULL, 0x1000, PG_RW | PG_P);
+	memcpy(pd, kpagedir, 0x1000);
+	return pd;
+}
+
+void
+alloc_pt(uint32_t *pd, uint32_t v_start,
+size_t len, uint32_t frame, int flags)
+{
+	uint32_t *pt;
+	int pte, pde;
+	uint32_t v_end = v_start + len;
+
+	v_start = pg_rounddown(v_start);
+	frame = pg_rounddown(frame);
+
+	for (; v_start < v_end; v_start += 0x1000) {
+		pde = v_start >> 22;
+		pte = (v_start >> 12) & 0x3FF;
+
+		if (!(pd[pde] & 1)) {
+			pt = mmap(NULL, 0x1000, flags);
+			pd[pde] = (virt2phys(pt) & 0xFFFFF000) | flags;
+		}
+
+		pt[pte] = (frame & 0xFFFFF000) | flags;
+		frame += 0x1000;
+	}
 }

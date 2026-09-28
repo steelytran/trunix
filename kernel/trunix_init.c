@@ -67,7 +67,7 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 	cut_memmap(&k, 0x0000, 0x1000);
 
 	/* setup paging */
-	pg_clear(&k);
+	pg_clear();
 	pg_identity();
 	pg_enable();
 

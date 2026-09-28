@@ -31,21 +31,18 @@ memmove:
 	cmpl %esi, %edi
 	jg 1f
 
-	cld
-	jmp 2f
-
-1:
 	movl %ecx, %eax
 	decl %eax
 	addl %eax, %edi
 	addl %eax, %esi
 	std
 
-2:
+1:
 	rep movsb
 
 	movl 12(%esp), %eax
 
+	cld
 	popl %edi
 	popl %esi
 	ret 
@@ -58,7 +55,6 @@ memcpy:
 	movl 12(%esp), %edi
 	movl 16(%esp), %esi
 	movl 20(%esp), %ecx
-	cld
 	rep movsb
 
 	movl 20(%esp), %eax
@@ -75,7 +71,6 @@ memcpyw:
 	movl 12(%esp), %edi
 	movl 16(%esp), %esi
 	movl 20(%esp), %ecx
-	cld
 	rep movsw
 
 	movl 20(%esp), %eax
@@ -92,7 +87,6 @@ memcpyl:
 	movl 12(%esp), %edi
 	movl 16(%esp), %esi
 	movl 20(%esp), %ecx
-	cld
 	rep movsl
 
 	movl 20(%esp), %eax
@@ -109,7 +103,6 @@ memset:
 	movl 8(%esp), %edi
 	movb 12(%esp), %al
 	movl 16(%esp), %ecx
-	cld
 	rep stosb
 
 	movl 12(%esp), %eax
@@ -124,7 +117,6 @@ memsetw:
 	movl 8(%esp), %edi
 	movw 12(%esp), %ax
 	movl 16(%esp), %ecx
-	cld
 	rep stosw
 
 	movl 12(%esp), %eax
@@ -139,7 +131,6 @@ memsetl:
 	movl 8(%esp), %edi
 	movl 12(%esp), %eax
 	movl 16(%esp), %ecx
-	cld
 	rep stosl
 
 	movl 12(%esp), %eax

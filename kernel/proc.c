@@ -26,11 +26,11 @@
 #include <string.h>
 
 #define STACK_SIZE 0x1000
+#define KSTACK_SIZE 0x2000
 
 extern struct task_state_segment tss;
 
 static struct proc *curthread;
-static uint32_t kpagedir;
 static struct proc *idle;
 
 TAILQ_HEAD(pqueue, proc);
@@ -45,32 +45,32 @@ void enqueue(struct proc *);
 void dequeue(void);
 void yield(void);
 struct proc *kthread_create(void (*)(void));
+__dead void scheduler(void);
 
 static void forkret(void);
-static struct proc *alloc_proc(void);
+static struct proc *alloc_thread(void);
 
 static void
 forkret(void)
 {
-	if (curthread->cr3)
+	if (curthread->cr3) {
 		swap_cr3(curthread->cr3);
-
-	tss.esp0 = curthread->kstack + STACK_SIZE;
+		tss.esp0 = curthread->esp0 + STACK_SIZE;
+	}
 
 	return;
 }
 
 static struct proc *
-alloc_proc(void)
+alloc_thread(void)
 {
-	static unsigned int pid = 1;
 	struct proc *p;
 	uintptr_t kstack;
 	uintptr_t sp;
 
-	kstack = (uintptr_t)mmap(NULL, 0x2000, PG_RW | PG_P);
-	p = (struct proc *)(kstack + 0x2000 - sizeof(*p));
-	p->kstack = kstack;
+	kstack = (uintptr_t)mmap(NULL, KSTACK_SIZE, PG_RW | PG_P);
+	p = (struct proc *)(kstack + KSTACK_SIZE - sizeof(*p));
+	p->esp0 = kstack;
 	sp = (uintptr_t)p;
 
 	sp -= sizeof(*p->tf);
@@ -84,7 +84,70 @@ alloc_proc(void)
 	memset(p->context, 0, sizeof(*p->context));
 	p->context->eip = (uint32_t)forkret;
 
+	return p;
+}
+
+static struct proc *
+proc_create(void)
+{
+	static unsigned int pid = 1;
+
+	struct proc *p = alloc_thread();
+
+	p->tf->gs = (4 * 8) | 3;
+	p->tf->fs = (4 * 8) | 3;
+	p->tf->es = (4 * 8) | 3;
+	p->tf->ds = (4 * 8) | 3;
+
+	/* iret */
+	p->tf->cs = (3 * 8) | 3;
+	p->tf->eflags = 0x0202;
+	p->tf->esp = 0x40002000;
+	p->tf->ss = (4 * 8) | 3;
+
+	p->state = READY;
 	p->pid = pid++;
+
+	return p;
+}
+
+struct proc *
+kthread_create(void (*eip)(void))
+{
+	struct proc *p = alloc_thread();
+
+	p->cr3 = (uintptr_t)NULL;
+	p->state = READY;
+
+	p->tf->gs = (2 * 8) | 0;
+	p->tf->fs = (2 * 8) | 0;
+	p->tf->ds = (2 * 8) | 0;
+	p->tf->es = (2 * 8) | 0;
+
+	/* iret */
+	p->tf->eip = (uint32_t)eip;
+	p->tf->cs = (1 * 8) | 0;
+	p->tf->eflags = 0x0202;
+
+	return p;
+}
+
+struct proc *
+initsys(void)
+{
+	struct proc *p = proc_create();
+
+	uint32_t *pd = cpykvm();
+	uintptr_t mem = (uintptr_t)mmap(NULL, 0x2000, PG_US | PG_RW | PG_P);
+
+	memset((void *)mem, 0, 0x2000);
+
+	p->cr3 = (uintptr_t)virt2phys(pd);
+
+	alloc_pt(pd, 0x40000000, 0x2000, virt2phys(mem), PG_US | PG_RW | PG_P);
+	memmove((void *)mem, init, 0x100);
+
+	p->tf->eip = 0x40000000;
 
 	return p;
 }
@@ -111,44 +174,6 @@ yield(void)
 	switch_to(&curthread->context, idle->context);
 }
 
-__dead void
-scheduler(void)
-{
-	int found = 0;
-	struct proc *p;
-
-	for (;;) {
-		cli();
-
-		if (TAILQ_EMPTY(&queue))
-			goto wait;
-
-		found = 0;
-		TAILQ_FOREACH(p, &queue, entries) {
-			if (p->state == READY) {
-				found = 1;
-				break;
-			}
-		}
-
-		if (!found)
-			goto wait;
-
-		curthread = p;
-		TAILQ_REMOVE(&queue, p, entries);
-		curthread->state = RUNNING;
-
-		switch_to(&idle->context, p->context);
-
-		TAILQ_INSERT_TAIL(&queue, p, entries);
-		continue;
-
-wait:
-		__asm__ volatile("sti\n\thlt");
-
-	}
-}
-
 void
 init_sched(void)
 {
@@ -160,64 +185,52 @@ init_sched(void)
 	scheduler();
 }
 
-struct proc *
-kthread_create(void (*eip)(void))
+__dead void
+scheduler(void)
 {
-	struct proc *p = alloc_proc();
+	struct proc *p;
 
-	p->cr3 = (uintptr_t)NULL;
-	p->state = READY;
+	for (;;) {
+		cli();
 
-	p->tf->gs = (2 * 8) | 0;
-	p->tf->fs = (2 * 8) | 0;
-	p->tf->ds = (2 * 8) | 0;
-	p->tf->es = (2 * 8) | 0;
+		TAILQ_FOREACH(p, &queue, entries)
+			if (p->state == READY)
+				goto found;
 
-	p->tf->eip = (uint32_t)eip;
-	p->tf->cs = (1 * 8) | 0;
-	p->tf->eflags = 0x0202;
-	p->tf->ss = (2 * 8) | 0;
+		sti();
+		for (;;)
+			hlt();
 
-	return p;
+found:
+		curthread = p;
+		TAILQ_REMOVE(&queue, p, entries);
+		curthread->state = RUNNING;
+
+		switch_to(&idle->context, p->context);
+
+		TAILQ_INSERT_TAIL(&queue, p, entries);
+	}
 }
 
-struct proc *
-initsys(void)
+int
+fork(void)
 {
-	uint32_t pte, pde;
+	struct proc *p = proc_create();
 
-	struct proc *p = alloc_proc();
-	uintptr_t mem = (uintptr_t)mmap(NULL, 0x1000, PG_US | PG_RW | PG_P);
+	if (p == NULL)
+		return -1;
 
-	uint32_t *pd = mmap(NULL, 0x1000, PG_RW | PG_P);
-	uint32_t *pt = mmap(NULL, 0x1000, PG_RW | PG_P);
+	p->parent = curthread;
 
-	memset((void *)mem, 0, 0x1000);
+	memcpy((void *)phys2virt(p->cr3),
+	    (void *)phys2virt(curthread->cr3),
+	    0x1000);
 
-	memcpy(pd, (uint32_t *)phys2virt(read_cr3()), 0x1000);
-	p->cr3 = (uintptr_t)virt2phys(pd);
-
-	pde = 0x40000000 >> 22;
-	pte = (0x40000000 >> 12) & 0x3FF;
-
-	pd[pde] = (virt2phys(pt) & 0xFFFFF000) | (PG_US | PG_RW | PG_P);
-	pt[pte] = (virt2phys(mem) & 0xFFFFF000) | (PG_US | PG_RW | PG_P);
-
-	memmove((void *)mem, init, 0x500);
-
-/* stack frame */
-	p->tf->gs = (4 * 8) | 3;
-	p->tf->fs = (4 * 8) | 3;
-	p->tf->es = (4 * 8) | 3;
-	p->tf->ds = (4 * 8) | 3;
-
-	p->tf->eip = 0x40000000;
-	p->tf->cs = (3 * 8) | 3;
-	p->tf->eflags = 0x0202;
-	p->tf->esp = 0x40001000;
-	p->tf->ss = (4 * 8) | 3;
-
+	p->tf->eip = curthread->tf->eip;
+	p->tf->eax = 0; /* child returns 0 */
 	p->state = READY;
 
-	return p;
+	enqueue(p);
+
+	return p->pid;
 }
