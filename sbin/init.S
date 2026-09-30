@@ -1,10 +1,13 @@
-.data
-path:
-	.asciz "/test"
-
 .text
-.globl init
-init:
+path:
+	.skip 1
+
+.globl _start
+_start:
+	jmp _start
+
+
+
 	movl $2, %eax
 	int $0x80
 	testl %eax, %eax

@@ -31,6 +31,7 @@ CFLAGS := -fno-pic -fno-pie -fno-builtin -mno-mmx -mno-sse \
 -Wextra -Wpedantic -glldb -g3 -std=c99 -MD $(INCLUDE) $(TARGET)
 
 BIN := trunix
+INIT := initrd/sbin/init
 
 UNPAGED_OBJS = head.S.o trunix_init.c.o paging.c.o pg_utils.S.o util.S.o string.S.o
 
@@ -39,7 +40,7 @@ $(addprefix unpaged_,$(UNPAGED_OBJS)) \
 string.S.o printf.c.o main.c.o interrupt.S.o \
 gate.S.o paging.c.o pg_utils.S.o tty.S.o util.S.o \
 mem.c.o proc.c.o switch.S.o string.c.o switch.S.o \
-init.S.o com.S.o initrd.c.o
+com.S.o initrd.c.o
 
 OBJS = $(addprefix kernel/,$(K_OBJS))
 
@@ -60,14 +61,14 @@ $(BIN): $(OBJS)
 %.c.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-test: test.S
+$(INIT): sbin/init.S
 	$(AS) $(TARGET) -static -c $< -o $<.o
-	$(LD) $<.o -o fs/$@
+	$(LD) $<.o -o $@
 
-iso: $(BIN)
+iso: $(BIN) $(INIT)
 	mkdir -p isodir/boot/grub
 	cp $< isodir/boot/$<
-	tar --numeric-owner -czvf isodir/boot/initrd -C fs .
+	tar --numeric-owner -czvf isodir/boot/initrd -C initrd .
 	cp grub.cfg isodir/boot/grub/grub.cfg
 	$(GRUB)-mkrescue -o $<.iso isodir
 

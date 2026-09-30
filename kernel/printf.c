@@ -80,10 +80,7 @@ printf(const char *fmt, ...)
 				continue;
 			} if (*fmt == 's') {
 				c = va_arg(args, char *);
-				while (*c)
-					putchar(*c++);
-
-				continue;
+				goto flush;
 			}
 
 			switch (*fmt) {
@@ -104,6 +101,7 @@ printf(const char *fmt, ...)
 
 			c = itoa(va_arg(args, int), base);
 
+flush:
 			while (*c != '\0')
 				putchar(*c++);
 

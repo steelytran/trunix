@@ -80,6 +80,6 @@ void dequeue(void);
 void yield(void);
 struct proc *kthread_create(void (*)(void));
 void init_sched(void);
-struct proc *initsys(void);
+void initsys(void);
 
 #endif

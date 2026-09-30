@@ -49,12 +49,6 @@
 
 	ARG_LONG_GET read_esp, %esp
 
-	ARG_LONG_SET write_cr4, %cr4
-	ARG_LONG_SET write_cr3, %cr3
-	ARG_LONG_SET write_cr2, %cr2
-	ARG_LONG_SET write_cr1, %cr1
-	ARG_LONG_SET write_cr0, %cr0
-
 	ARG_LONG_SET write_eax, %eax
 	ARG_LONG_SET write_ebx, %ebx
 	ARG_LONG_SET write_ecx, %ecx

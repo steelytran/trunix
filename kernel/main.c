@@ -44,6 +44,6 @@ kmain(struct kinfo *kernel_info)
 	init_serial();
 	load_initrd();
 
-	enqueue(initsys());
+	initsys();
 	init_sched();
 }
