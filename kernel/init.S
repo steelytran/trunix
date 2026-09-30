@@ -1,20 +1,17 @@
 .text
 .globl init
 init:
-	jmp init
-
 	movl $2, %eax
 	int $0x80
+	testl %eax, %eax
+	js 2f
+	jz 1f
 
-	cmpl $1, %eax
-	je 1f
-	jg 2f
-
-0:
+0: /* fork failed */
 	jmp 0b
 
-1:
+1: /* child */
 	jmp 1b
 
-2:
+2: /* parent */
 	jmp 2b

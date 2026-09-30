@@ -76,6 +76,10 @@ void panic(void);
 void load_initrd(struct kinfo *);
 char *itoa(int, unsigned int);
 
+void init_serial(void);
+uint8_t read_serial(void);
+void write_serial(uint8_t);
+
 void init_gdt(void);
 void init_tss(void);
 void init_idt(void);

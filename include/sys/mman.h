@@ -60,5 +60,5 @@ void munmap(void *, size_t);
 void init_mem(struct kinfo *);
 void alloc_pt(uint32_t *, uint32_t, size_t, uint32_t, int);
 
-uint32_t *cpykvm(void);
+uint32_t *copykvm(void);
 #endif

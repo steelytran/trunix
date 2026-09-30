@@ -62,9 +62,9 @@ struct context {
 struct proc {
 	int pid;
 	uint32_t cr3;
-	uintptr_t esp0;
-
-	size_t len;
+	uintptr_t kstack;
+	size_t size;
+	uintptr_t addr;
 
 	struct context *context;
 	struct trapframe *tf;

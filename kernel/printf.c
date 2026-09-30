@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-static char *
+char *
 itoa(int n, unsigned int base)
 {
 	int j, i = 0;

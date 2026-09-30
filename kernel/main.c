@@ -27,8 +27,6 @@
 
 struct kinfo k;
 
-extern void test2(void);
-
 /*
  * kernel main
  */
@@ -43,6 +41,8 @@ kmain(struct kinfo *kernel_info)
 
 	pg_clear_identity();
 	init_mem(&k);
+
+	init_serial();
 
 	enqueue(initsys());
 	init_sched();

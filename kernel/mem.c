@@ -37,7 +37,7 @@ static unsigned int last_page;
 void *mmap(void *, size_t, int);
 void munmap(void *, size_t);
 void init_mem(struct kinfo *);
-uint32_t *cpykvm(void);
+uint32_t *copykvm(void);
 void alloc_pt(uint32_t *, uint32_t, size_t, uint32_t, int);
 
 static inline uintptr_t alloc_pages(int, int, int);
@@ -161,7 +161,7 @@ init_mem(struct kinfo *k)
 }
 
 uint32_t *
-cpykvm(void)
+copykvm(void)
 {
 	uint32_t *pd = mmap(NULL, 0x1000, PG_RW | PG_P);
 	memcpy(pd, kpagedir, 0x1000);

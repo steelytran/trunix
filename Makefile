@@ -39,7 +39,7 @@ $(addprefix unpaged_,$(UNPAGED_OBJS)) \
 string.S.o printf.c.o main.c.o interrupt.S.o \
 gate.S.o paging.c.o pg_utils.S.o tty.S.o util.S.o \
 mem.c.o proc.c.o switch.S.o string.c.o switch.S.o \
-init.S.o
+init.S.o com.S.o
 
 OBJS = $(addprefix kernel/,$(K_OBJS))
 

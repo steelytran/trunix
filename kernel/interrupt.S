@@ -17,9 +17,14 @@
  */
 
 .extern fork
+.extern printf
 
-.bss
-	.lcomm STAT_SYSCALL, 4
+.data
+panic_msg:	.asciz "KERNEL PANIC!\n"
+pf_msg:		.asciz "Page fault: 0b%b\nAddress: 0x%x\n"
+inv_op_msg:	.asciz "Invalid opcode"
+inv_tss_msg:	.asciz "Invalid TSS\n"
+gpf_msg:	.asciz "General protection fault\n"
 
 .text
 /* divide by zero */
@@ -55,9 +60,17 @@ INT_0x05:
 /* invalid opcode */
 .globl INT_0x06
 INT_0x06:
+	pushl $panic_msg
+	call printf
+	addl $4, %esp
+
+	pushl $inv_op_msg
+	call printf
+
+1:
 	cli
 	hlt
-	jmp INT_0x06
+	jmp 1b
 
 /* math coprocessor not available */
 .globl INT_0x07
@@ -68,6 +81,7 @@ INT_0x07:
 .globl INT_0x08
 INT_0x08:
 	cli
+	popl %eax
 	hlt
 	jmp INT_0x08
 
@@ -79,9 +93,16 @@ INT_0x09:
 /* invalid TSS */
 .globl INT_0x0A
 INT_0x0A:
-	cli
+	pushl $panic_msg
+	call printf
+	addl $4, %esp
+
+	pushl $inv_op_msg
+	call printf
+
+1:	cli
 	hlt
-	jmp INT_0x0A
+	jmp 1b
 
 /* segment not present */
 .globl INT_0x0B
@@ -98,6 +119,13 @@ INT_0x0C:
 /* general protection fault*/
 .globl INT_0x0D
 INT_0x0D:
+	pushl $panic_msg
+	call printf
+	addl $4, %esp
+
+	pushl $gpf_msg
+	call printf
+
 1:	cli
 	hlt
 	jmp 1b
@@ -106,6 +134,17 @@ INT_0x0D:
 .globl INT_0x0E
 INT_0x0E:
 	popl %eax
+	movl %cr2, %ecx
+
+	pushl $panic_msg
+	call printf
+	addl $4, %esp
+
+	pushl %ecx
+	pushl %eax
+	pushl $pf_msg
+	call printf
+
 1:	cli
 	hlt
 	jmp 1b

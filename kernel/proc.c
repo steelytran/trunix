@@ -26,7 +26,7 @@
 #include <string.h>
 
 #define STACK_SIZE 0x1000
-#define KSTACK_SIZE 0x2000
+#define KSTACK_SIZE 0x1000
 
 extern struct task_state_segment tss;
 
@@ -53,11 +53,6 @@ static struct proc *alloc_thread(void);
 static void
 forkret(void)
 {
-	if (curthread->cr3) {
-		swap_cr3(curthread->cr3);
-		tss.esp0 = curthread->esp0 + STACK_SIZE;
-	}
-
 	return;
 }
 
@@ -70,7 +65,7 @@ alloc_thread(void)
 
 	kstack = (uintptr_t)mmap(NULL, KSTACK_SIZE, PG_RW | PG_P);
 	p = (struct proc *)(kstack + KSTACK_SIZE - sizeof(*p));
-	p->esp0 = kstack;
+	p->kstack = kstack;
 	sp = (uintptr_t)p;
 
 	sp -= sizeof(*p->tf);
@@ -102,7 +97,7 @@ proc_create(void)
 	/* iret */
 	p->tf->cs = (3 * 8) | 3;
 	p->tf->eflags = 0x0202;
-	p->tf->esp = 0x40002000;
+
 	p->tf->ss = (4 * 8) | 3;
 
 	p->state = READY;
@@ -135,19 +130,24 @@ kthread_create(void (*eip)(void))
 struct proc *
 initsys(void)
 {
+	uintptr_t mem;
+	size_t initsize = 0x1000;
 	struct proc *p = proc_create();
+	uint32_t *pd = copykvm();
 
-	uint32_t *pd = cpykvm();
-	uintptr_t mem = (uintptr_t)mmap(NULL, 0x2000, PG_US | PG_RW | PG_P);
+	p->size = initsize + STACK_SIZE;
 
-	memset((void *)mem, 0, 0x2000);
+	mem = (uintptr_t)mmap(NULL, p->size, PG_US | PG_RW | PG_P);
+	memset((void *)mem, 0, p->size);
+	p->addr = mem;
 
 	p->cr3 = (uintptr_t)virt2phys(pd);
+	alloc_pt(pd, 0x40000000, p->size, virt2phys(mem), PG_US | PG_RW | PG_P);
 
-	alloc_pt(pd, 0x40000000, 0x2000, virt2phys(mem), PG_US | PG_RW | PG_P);
-	memmove((void *)mem, init, 0x100);
+	memmove((void *)mem, init, initsize);
 
 	p->tf->eip = 0x40000000;
+	p->tf->esp = 0x40000000 + p->size;
 
 	return p;
 }
@@ -206,6 +206,11 @@ found:
 		TAILQ_REMOVE(&queue, p, entries);
 		curthread->state = RUNNING;
 
+		if (curthread->cr3) {
+			swap_cr3(curthread->cr3);
+			tss.esp0 = (uintptr_t)curthread;
+		}
+
 		switch_to(&idle->context, p->context);
 
 		TAILQ_INSERT_TAIL(&queue, p, entries);
@@ -215,22 +220,23 @@ found:
 int
 fork(void)
 {
+	uintptr_t mem;
 	struct proc *p = proc_create();
+	uint32_t *pd = copykvm();
 
-	if (p == NULL)
-		return -1;
+	p->size = curthread->size;
+	mem = (uintptr_t)mmap(NULL, p->size, PG_US | PG_RW | PG_P);
+	memset((void *)mem, 0, p->size);
+	p->addr = mem;
+	memcpy((void *)p->addr, (void *)curthread->addr, p->size);
 
-	p->parent = curthread;
+	p->cr3 = (uintptr_t)virt2phys(pd);
+	alloc_pt(pd, 0x40000000, p->size, virt2phys(mem), PG_US | PG_RW | PG_P);
 
-	memcpy((void *)phys2virt(p->cr3),
-	    (void *)phys2virt(curthread->cr3),
-	    0x1000);
-
-	p->tf->eip = curthread->tf->eip;
+	*p->tf = *curthread->tf;
 	p->tf->eax = 0; /* child returns 0 */
-	p->state = READY;
 
 	enqueue(p);
-
 	return p->pid;
 }
+
