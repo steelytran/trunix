@@ -2,6 +2,7 @@
 isodir
 *.iso
 *.o
+*.d
 trunix
 qemu*
 test
