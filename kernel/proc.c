@@ -21,6 +21,7 @@
 #include <sys/proc.h>
 #include <sys/mman.h>
 #include <sys/cdefs.h>
+#include <sys/file.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -28,10 +29,42 @@
 #define STACK_SIZE 0x1000
 #define KSTACK_SIZE 0x1000
 
+#define ELFMAGIC 0x464C457F
+
 extern struct task_state_segment tss;
+extern struct kinfo k;
 
 static struct proc *curthread;
 static struct proc *idle;
+
+struct elfhdr {
+  uint32_t magic;
+  uint8_t elf[12];
+  uint16_t type;
+  uint16_t machine;
+  uint32_t version;
+  uint32_t entry;
+  uint32_t phoff;
+  uint32_t shoff;
+  uint32_t flags;
+  uint16_t hdrsz;
+  uint16_t phentsz;
+  uint16_t ph_n;
+  uint16_t shentsz;
+  uint16_t sh_n;
+  uint16_t shstrndx;
+};
+
+struct proghdr {
+	uint32_t type;
+	uint32_t off;
+	uint32_t vaddr;
+	uint32_t paddr;
+	uint32_t filesz;
+	uint32_t memsz;
+	uint32_t flags;
+	uint32_t align;
+};
 
 TAILQ_HEAD(pqueue, proc);
 struct pqueue queue = TAILQ_HEAD_INITIALIZER(queue);
@@ -86,7 +119,6 @@ static struct proc *
 proc_create(void)
 {
 	static unsigned int pid = 1;
-
 	struct proc *p = alloc_thread();
 
 	p->tf->gs = (4 * 8) | 3;
@@ -170,7 +202,9 @@ void
 yield(void)
 {
 	cli();
-	curthread->state = READY;
+	if (curthread->state == RUNNING)
+		curthread->state = READY;
+
 	switch_to(&curthread->context, idle->context);
 }
 
@@ -218,7 +252,7 @@ found:
 }
 
 int
-fork(void)
+sys_fork(void)
 {
 	uintptr_t mem;
 	struct proc *p = proc_create();
@@ -237,6 +271,85 @@ fork(void)
 	p->tf->eax = 0; /* child returns 0 */
 
 	enqueue(p);
+
 	return p->pid;
 }
 
+int
+sys_execve(const char *path, const char **argv, const char **envp)
+{
+	uintptr_t mem, frame;
+	size_t framesz;
+	uint32_t *pd;
+	uint32_t *stack;
+	uint32_t m;
+
+	uintptr_t bin;
+	struct elfhdr *elf;
+	struct proghdr *ph;
+	int i;
+
+	for (i = ROOT_INO; i < k.ino_n; ++i)
+		if (strcmp(path, k.dir_tbl[i].name) == 0)
+			goto found;
+
+	return -1;
+
+found:
+	bin = k.ino_tbl[i].addr;
+	elf = (struct elfhdr *)bin;
+
+	if (elf->magic != ELFMAGIC)
+		return -1;
+
+	/* TODO: free program memory here */
+	pd = copykvm();
+
+	ph = (struct proghdr *)(bin + elf->phoff);
+	for (i = 0; i < elf->ph_n; ++i) {
+		switch (ph[i].type) {
+		case 1: /* FALLTHROUGH */
+		case 4:
+			break;
+		case 2: /* FALLTHROUGH */
+		case 3:
+			return -1;
+		case 0: /* FALLTHROUGH */
+		default:
+			continue;
+		}
+
+		mem = (uintptr_t)mmap(NULL,
+		    ph[i].memsz,
+		    PG_US | PG_RW | PG_P);
+
+		memset((void *)mem, 0, ph[i].memsz);
+
+		memmove((void *)(mem + ph[i].vaddr % 0x1000),
+		    (void *)(bin + ph[i].off),
+		    ph[i].filesz);
+
+		alloc_pt(pd,
+		    ph[i].vaddr,
+		    ph[i].memsz,
+		    virt2phys(mem),
+		    PG_US | PG_RW | PG_P);
+
+	}
+
+	swap_cr3(virt2phys(pd));
+	curthread->cr3 = (uintptr_t)virt2phys(pd);
+	curthread->tf->eip = elf->entry;
+	curthread->tf->esp = KERNEL_OFFSET;
+
+	stack = mmap(NULL, STACK_SIZE, PG_US | PG_RW | PG_P);
+	memset(stack, 0, STACK_SIZE);
+
+	alloc_pt(pd,
+	    KERNEL_OFFSET - STACK_SIZE,
+	    STACK_SIZE,
+	    virt2phys(stack),
+	    PG_US | PG_RW | PG_P);
+
+	return 0;
+}

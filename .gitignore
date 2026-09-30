@@ -4,3 +4,4 @@ isodir
 *.o
 trunix
 qemu*
+test

@@ -45,7 +45,7 @@ struct devrw {
 
 extern struct devrw devrw[];
 
-struct tnode {
+struct dirent {
 	unsigned int ino_id;
 	char name[DIRSIZ];
 };

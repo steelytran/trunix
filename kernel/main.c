@@ -41,8 +41,8 @@ kmain(struct kinfo *kernel_info)
 
 	pg_clear_identity();
 	init_mem(&k);
-
 	init_serial();
+	load_initrd();
 
 	enqueue(initsys());
 	init_sched();

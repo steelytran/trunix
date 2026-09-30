@@ -70,10 +70,17 @@ struct kinfo {
 	size_t mmap_len;
 	uint32_t mem_high_phys;
 	uintptr_t free_pde_start;
+
+	uintptr_t initrd_start;
+	uintptr_t initrd_end;
+
+	unsigned int ino_n;
+	struct inode *ino_tbl;
+	struct dirent *dir_tbl;
 };
 
 void panic(void);
-void load_initrd(struct kinfo *);
+void load_initrd(void);
 char *itoa(int, unsigned int);
 
 void init_serial(void);

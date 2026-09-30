@@ -186,6 +186,9 @@ size_t len, uint32_t frame, int flags)
 		if (!(pd[pde] & 1)) {
 			pt = mmap(NULL, 0x1000, flags);
 			pd[pde] = (virt2phys(pt) & 0xFFFFF000) | flags;
+		} else {
+			pt = (uint32_t *)phys2virt(pd[pde] & 0xFFFFF000);
+			pd[pde] |= flags;
 		}
 
 		pt[pte] = (frame & 0xFFFFF000) | flags;

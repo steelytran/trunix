@@ -236,8 +236,9 @@ INT_0x80:
 	pushl %gs
 	pushal
 
-	call *tbl_syscall(, %eax, 4)
+	jmp *tbl_syscall(, %eax, 4)
 
+end_syscall:
 	popal
 	popl %gs
 	popl %fs
@@ -253,49 +254,45 @@ tbl_syscall:
 	.long write /* 4 */
 	.long open /* 5 */
 	.long close /* 6 */
-	.long waitpid /* 7 */
-	.long creat /* 8 */
-	.long link /* 9 */
-	.long unlink /* 10 */
-	.long execve /* 11 */
+	.long creat /* 7 */
+	.long execve /* 8 */
+	.long mmap /* 9 */
 
 /*
  * temporary for unimplemented syscalls
  */
 restart:
-	ret
+	jmp end_syscall
 
 exit:
-	ret
+	jmp end_syscall
 
-/*
 fork:
-	ret
-*/
+	call sys_fork
+	jmp end_syscall
 
 read:
-	ret
+	jmp end_syscall
 
 write:
-	ret
+	jmp end_syscall
 
 open:
-	ret
+	jmp end_syscall
 
 close:
-	ret
-
-waitpid:
-	ret
+	jmp end_syscall
 
 creat:
-	ret
-
-link:
-	ret
-
-unlink:
-	ret
+	jmp end_syscall
 
 execve:
-	ret
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+	call sys_execve
+	addl $4 * 3, %esp
+	jmp end_syscall
+
+mmap:
+	jmp end_syscall

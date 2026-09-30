@@ -28,7 +28,7 @@ ASFLAGS := $(INCLUDE) $(TARGET)
 CFLAGS := -fno-pic -fno-pie -fno-builtin -mno-mmx -mno-sse \
 -fno-stack-protector -mgeneral-regs-only -mno-sse2 -mno-3dnow \
 -static -fno-strict-aliasing -ffreestanding -nostdlib -Wall \
--Wextra -Wpedantic -glldb -g3 -std=c99 $(INCLUDE) $(TARGET)
+-Wextra -Wpedantic -glldb -g3 -std=c99 -MD $(INCLUDE) $(TARGET)
 
 BIN := trunix
 
@@ -39,9 +39,11 @@ $(addprefix unpaged_,$(UNPAGED_OBJS)) \
 string.S.o printf.c.o main.c.o interrupt.S.o \
 gate.S.o paging.c.o pg_utils.S.o tty.S.o util.S.o \
 mem.c.o proc.c.o switch.S.o string.c.o switch.S.o \
-init.S.o com.S.o
+init.S.o com.S.o initrd.c.o
 
 OBJS = $(addprefix kernel/,$(K_OBJS))
+
+-include *.d
 
 kernel/unpaged_%: kernel/%
 	$(OBJCOPY) --prefix-symbols=__k_unpaged_ $< $@
@@ -58,9 +60,14 @@ $(BIN): $(OBJS)
 %.c.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+test: test.S
+	$(AS) $(TARGET) -static -c $< -o $<.o
+	$(LD) $<.o -o fs/$@
+
 iso: $(BIN)
 	mkdir -p isodir/boot/grub
 	cp $< isodir/boot/$<
+	tar --numeric-owner -czvf isodir/boot/initrd -C fs .
 	cp grub.cfg isodir/boot/grub/grub.cfg
 	$(GRUB)-mkrescue -o $<.iso isodir
 

@@ -22,6 +22,8 @@
 #include <stddef.h>
 #include <string.h>
 
+extern struct kinfo k;
+
 static int
 oct2int(unsigned char *str, int len)
 {
@@ -41,32 +43,30 @@ oct2int(unsigned char *str, int len)
 }
 
 void
-load_initrd(struct kinfo *k)
+load_initrd(void)
 {
-	void *node;
+	size_t len = k.initrd_end - k.initrd_start;
 
 	unsigned int i = 2;
-	void *tar = mmap((void *)k->initrd_addr,
-	     k->initrd_len,
-	     PROT_WRITE,
-	     0, 0, 0
+	void *tar = mmap((void *)k.initrd_start,
+	    len,
+	    PG_US | PG_RW | PG_P
 	);
 
 	uint8_t *p = tar;
-	size_t len = k->initrd_len;
 
-	struct inode *in = mmap(NULL, 0x2000, PROT_WRITE, 0, 0, 0);
-	struct tnode *tn = mmap(NULL, 0x2000, PROT_WRITE, 0, 0, 0);
+	struct inode *in = mmap(NULL, 0x2000, PG_US | PG_RW | PG_P);
+	struct dirent *dir = mmap(NULL, 0x2000, PG_US | PG_RW | PG_P);
 
-	k->inodes = in;
-	k->tnodes = tn;
+	k.ino_tbl = in;
+	k.dir_tbl = dir;
 
 	for (; p < (uint8_t *)tar + len; p += 512) {
 		if (memcmp("ustar\00000", &p[257], 8) != 0)
 			continue;
 
-		tn[i].ino_id = i;
-		strncpy(tn[i].name, &p[1], DIRSIZ);
+		dir[i].ino_id = i;
+		strncpy(dir[i].name, &p[1], DIRSIZ);
 
 		in[i].mode = oct2int(&p[100], 6);
 		in[i].uid = oct2int(&p[108], 6);
@@ -101,9 +101,12 @@ load_initrd(struct kinfo *k)
 
 		if (in[i].size > 0)
 			in[i].addr = (uintptr_t)&p[512];
+		else
+			in[i].addr = 0;
+
 
 		++i;
 	}
 
-	k->ino_n = i;
+	k.ino_n = i;
 }

@@ -1,17 +1,27 @@
+.data
+path:
+	.asciz "/test"
+
 .text
 .globl init
 init:
 	movl $2, %eax
 	int $0x80
 	testl %eax, %eax
-	js 2f
-	jz 1f
+	js 3f
+	jz 2f
 
-0: /* fork failed */
-	jmp 0b
-
-1: /* child */
+1: /* parent */
 	jmp 1b
 
-2: /* parent */
-	jmp 2b
+2: /* child */
+	movl $8, %eax
+	movl $path, %ebx
+	movl $0, %ecx
+	movl $0, %edx
+	int $0x80
+0:
+	jmp 0b
+
+3: /* fork failed */
+	jmp 3b
