@@ -28,7 +28,7 @@ ASFLAGS := $(INCLUDE) $(TARGET)
 CFLAGS := -fno-pic -fno-pie -fno-builtin -mno-mmx -mno-sse \
 -fno-stack-protector -mgeneral-regs-only -mno-sse2 -mno-3dnow \
 -static -fno-strict-aliasing -ffreestanding -nostdlib -Wall \
--Wextra -Wpedantic -glldb -g3 -std=c99 -MD $(INCLUDE) $(TARGET)
+-Wextra -Wpedantic -glldb -g3 -std=c99 $(INCLUDE) $(TARGET)
 
 BIN := trunix
 INIT := initrd/sbin/init
@@ -43,8 +43,6 @@ mem.c.o proc.c.o switch.S.o string.c.o switch.S.o \
 com.S.o initrd.c.o
 
 OBJS = $(addprefix kernel/,$(K_OBJS))
-
--include *.d
 
 kernel/unpaged_%: kernel/%
 	$(OBJCOPY) --prefix-symbols=__k_unpaged_ $< $@
@@ -66,11 +64,11 @@ $(INIT): sbin/init.S
 	$(LD) $<.o -o $@
 
 iso: $(BIN) $(INIT)
-	mkdir -p isodir/boot/grub
-	cp $< isodir/boot/$<
-	tar --numeric-owner -czvf isodir/boot/initrd -C initrd .
-	cp grub.cfg isodir/boot/grub/grub.cfg
-	$(GRUB)-mkrescue -o $<.iso isodir
+	mkdir -p iso/boot/grub
+	cp $< iso/boot/$<
+	tar --numeric-owner -czvf iso/boot/initrd -C initrd .
+	cp grub.cfg iso/boot/grub/grub.cfg
+	$(GRUB)-mkrescue -o $<.iso iso
 
 qemu: iso
 	qemu-system-i386 \
@@ -88,7 +86,7 @@ qemu-gdb: iso
 	lldb trunix -o "gdb-remote 1234"'
 
 clean:
-	rm -rf isodir
+	rm -rf iso
 	rm -f *.o
 	rm -f */*.o
 	rm -f $(BIN)

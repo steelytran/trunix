@@ -50,13 +50,13 @@ load_initrd(void)
 	unsigned int i = 2;
 	void *tar = mmap((void *)k.initrd_start,
 	    len,
-	    PG_US | PG_RW | PG_P
+	    PG_RW | PG_P
 	);
 
 	uint8_t *p = tar;
 
-	struct inode *in = mmap(NULL, 0x2000, PG_US | PG_RW | PG_P);
-	struct dirent *dir = mmap(NULL, 0x2000, PG_US | PG_RW | PG_P);
+	struct inode *in = mmap(NULL, 0x2000, PG_RW | PG_P);
+	struct dirent *dir = mmap(NULL, 0x2000, PG_RW | PG_P);
 
 	k.ino_tbl = in;
 	k.dir_tbl = dir;

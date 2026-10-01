@@ -63,8 +63,9 @@ struct proc {
 	int pid;
 	uint32_t cr3;
 	uintptr_t kstack;
-	size_t size;
-	uintptr_t addr;
+	uintptr_t stack;
+	uintptr_t start;
+	uintptr_t end;
 
 	struct context *context;
 	struct trapframe *tf;

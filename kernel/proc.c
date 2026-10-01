@@ -31,6 +31,7 @@
 
 #define ELFMAGIC 0x464C457F
 
+extern uint32_t *kpagedir;
 extern struct task_state_segment tss;
 extern struct kinfo k;
 
@@ -70,19 +71,22 @@ TAILQ_HEAD(pqueue, proc);
 struct pqueue queue = TAILQ_HEAD_INITIALIZER(queue);
 
 extern void trapret(void (*)(void));
-extern void init(void);
 
 void init_sched(void);
+void initsys(void);
 void enqueue(struct proc *);
 void dequeue(void);
 void yield(void);
 struct proc *kthread_create(void (*)(void));
 __dead void scheduler(void);
 void initsys(void);
+
+int sys_fork(void);
 int sys_execve(const char *path, const char **argv, const char **envp);
 
 static void forkret(void);
 static struct proc *alloc_thread(void);
+static struct proc *proc_create(void);
 
 static void
 forkret(void)
@@ -163,18 +167,18 @@ kthread_create(void (*eip)(void))
 void
 initsys(void)
 {
+	uintptr_t mem;
 	struct proc *p;
-	uintptr_t mem, frame;
-	size_t framesz;
 	uint32_t *pd;
-	uint32_t *stack;
-	uint32_t m;
 
 	uintptr_t bin;
 	struct elfhdr *elf;
 	struct proghdr *ph;
 	int i;
-	size_t sz = 0;
+	uintptr_t start, end;
+	uintptr_t min = UINTPTR_MAX;
+	uintptr_t max = 0;
+	size_t sz;
 
 	for (i = ROOT_INO; i < k.ino_n; ++i)
 		if (strcmp("/sbin/init", k.dir_tbl[i].name) == 0)
@@ -196,22 +200,42 @@ found:
 	ph = (struct proghdr *)(bin + elf->phoff);
 	for (i = 0; i < elf->ph_n; ++i) {
 		switch (ph[i].type) {
-		case 1: /* FALLTHROUGH */
-		case 4:
+		case 1:
 			break;
 		case 2: /* FALLTHROUGH */
 		case 3:
 			panic();
-		case 0: /* FALLTHROUGH */
 		default:
 			continue;
 		}
 
-		mem = (uintptr_t)mmap(NULL,
-		    ph[i].memsz,
-		    PG_US | PG_RW | PG_P);
+		start = ph[i].vaddr;
+		end = start + ph[i].memsz;
 
-		memset((void *)mem, 0, ph[i].memsz);
+		if (start < min)
+			min = pg_rounddown(start);
+
+		if (end > max)
+			max = pg_roundup(end);
+	}
+
+	sz = max - min + STACK_SIZE;
+
+	mem = (uintptr_t)mmap(NULL,
+	    sz, PG_US | PG_RW | PG_P);
+
+	memset((void *)mem, 0, sz);
+
+	for (i = 0; i < elf->ph_n; ++i) {
+		switch (ph[i].type) {
+		case 1:
+			break;
+		case 2: /* FALLTHROUGH */
+		case 3:
+			panic();
+		default:
+			continue;
+		}
 
 		memmove((void *)(mem + ph[i].vaddr % 0x1000),
 		    (void *)(bin + ph[i].off),
@@ -223,20 +247,20 @@ found:
 		    virt2phys(mem),
 		    PG_US | PG_RW | PG_P);
 
-		sz += ph[i].memsz;
+		mem += pg_roundup(ph[i].memsz);
 	}
 
+	p->stack = mem - STACK_SIZE;
+	p->start = min;
+	p->end = max;
 	p->cr3 = (uintptr_t)virt2phys(pd);
 	p->tf->eip = elf->entry;
 	p->tf->esp = KERNEL_OFFSET;
 
-	stack = mmap(NULL, STACK_SIZE, PG_US | PG_RW | PG_P);
-	memset(stack, 0, STACK_SIZE);
-
 	alloc_pt(pd,
 	    KERNEL_OFFSET - STACK_SIZE,
 	    STACK_SIZE,
-	    virt2phys(stack),
+	    virt2phys(mem - STACK_SIZE),
 	    PG_US | PG_RW | PG_P);
 
 	enqueue(p);
@@ -309,21 +333,35 @@ found:
 	}
 }
 
+#if 0
 int
 sys_fork(void)
 {
 	uintptr_t mem;
+	size_t sz;
 	struct proc *p = proc_create();
 	uint32_t *pd = copykvm();
 
-	p->size = curthread->size;
-	mem = (uintptr_t)mmap(NULL, p->size, PG_US | PG_RW | PG_P);
-	memset((void *)mem, 0, p->size);
-	p->addr = mem;
-	memcpy((void *)p->addr, (void *)curthread->addr, p->size);
+	sz = curthread->end - curthread->start;
 
+	mem = (uintptr_t)mmap(NULL, sz, PG_US | PG_RW | PG_P);
+	memset((void *)mem, 0, sz);
+	p->start = mem;
+
+	printf("0x%x\n", mem);
+
+	memmove((void *)p->start, (void *)curthread->start, sz);
 	p->cr3 = (uintptr_t)virt2phys(pd);
-	alloc_pt(pd, 0x40000000, p->size, virt2phys(mem), PG_US | PG_RW | PG_P);
+	alloc_pt(pd, 0x40000000, sz, virt2phys(mem), PG_US | PG_RW | PG_P);
+
+	p->stack = (uintptr_t)mmap(NULL, STACK_SIZE, PG_US | PG_RW | PG_P);
+	memmove((void *)p->stack, (void *)curthread->stack, STACK_SIZE);
+
+	alloc_pt(pd,
+	    KERNEL_OFFSET - STACK_SIZE,
+	    STACK_SIZE,
+	    virt2phys(p->stack),
+	    PG_US | PG_RW | PG_P);
 
 	*p->tf = *curthread->tf;
 	p->tf->eax = 0; /* child returns 0 */
@@ -336,16 +374,18 @@ sys_fork(void)
 int
 sys_execve(const char *path, const char **argv, const char **envp)
 {
-	uintptr_t mem, frame;
-	size_t framesz;
+	uintptr_t mem;
+	struct proc *p;
 	uint32_t *pd;
-	uint32_t *stack;
-	uint32_t m;
 
 	uintptr_t bin;
 	struct elfhdr *elf;
 	struct proghdr *ph;
 	int i;
+	uintptr_t start, end;
+	uintptr_t min = UINTPTR_MAX;
+	uintptr_t max = 0;
+	size_t sz;
 
 	for (i = ROOT_INO; i < k.ino_n; ++i)
 		if (strcmp(path, k.dir_tbl[i].name) == 0)
@@ -360,28 +400,50 @@ found:
 	if (elf->magic != ELFMAGIC)
 		return -1;
 
+	if ((p = proc_create()) == NULL)
+		return -1;
+
 	/* TODO: free program memory here */
 	pd = copykvm();
-
 	ph = (struct proghdr *)(bin + elf->phoff);
 	for (i = 0; i < elf->ph_n; ++i) {
 		switch (ph[i].type) {
-		case 1: /* FALLTHROUGH */
-		case 4:
+		case 1:
 			break;
 		case 2: /* FALLTHROUGH */
 		case 3:
 			return -1;
-		case 0: /* FALLTHROUGH */
 		default:
 			continue;
 		}
 
-		mem = (uintptr_t)mmap(NULL,
-		    ph[i].memsz,
-		    PG_US | PG_RW | PG_P);
+		start = ph[i].vaddr;
+		end = start + ph[i].memsz;
 
-		memset((void *)mem, 0, ph[i].memsz);
+		if (start < min)
+			min = pg_rounddown(start);
+
+		if (end > max)
+			max = pg_roundup(end);
+	}
+
+	sz = max - min + STACK_SIZE;
+
+	mem = (uintptr_t)mmap(NULL,
+	    sz, PG_US | PG_RW | PG_P);
+
+	memset((void *)mem, 0, sz);
+
+	for (i = 0; i < elf->ph_n; ++i) {
+		switch (ph[i].type) {
+		case 1:
+			break;
+		case 2: /* FALLTHROUGH */
+		case 3:
+			return -1;
+		default:
+			continue;
+		}
 
 		memmove((void *)(mem + ph[i].vaddr % 0x1000),
 		    (void *)(bin + ph[i].off),
@@ -393,21 +455,22 @@ found:
 		    virt2phys(mem),
 		    PG_US | PG_RW | PG_P);
 
+		mem += pg_roundup(ph[i].memsz);
 	}
 
 	write_cr3(virt2phys(pd));
+	curthread->start = min;
+	curthread->end = max;
 	curthread->cr3 = (uintptr_t)virt2phys(pd);
 	curthread->tf->eip = elf->entry;
 	curthread->tf->esp = KERNEL_OFFSET;
 
-	stack = mmap(NULL, STACK_SIZE, PG_US | PG_RW | PG_P);
-	memset(stack, 0, STACK_SIZE);
-
 	alloc_pt(pd,
 	    KERNEL_OFFSET - STACK_SIZE,
 	    STACK_SIZE,
-	    virt2phys(stack),
+	    virt2phys(mem - STACK_SIZE),
 	    PG_US | PG_RW | PG_P);
 
 	return 0;
 }
+#endif

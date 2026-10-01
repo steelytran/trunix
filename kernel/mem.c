@@ -29,7 +29,7 @@
 #define bit_unset(x, n)	((x) &= ~(1 << (n)))
 #define bit_isset(x, n)	((x) & (1 << (n)))
 
-static uint32_t *kpagedir;
+uint32_t *kpagedir;
 
 static uint32_t page_bitmap[0x100000 / 32];
 static unsigned int last_page;
