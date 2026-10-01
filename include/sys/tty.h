@@ -1,5 +1,5 @@
 /*
- * lower level memory management - assembly helper routines
+ * teletype
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,23 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define ASM_FILE
+#ifndef _SYS_TTY_H
+#define _SYS_TTY_H
 
-.text
-.globl flush_tlb
-flush_tlb:
-	movl %cr3, %eax
-	movl %eax, %cr3
-	ret
+#include <stdint.h>
 
-.globl vm_enable_paging
-vm_enable_paging:
-	movl 4(%esp), %eax
-	movl %eax, %cr3
+struct tty {
+	uint16_t buf[128];
+	int pos;
+};
 
-	movl %cr0, %eax
-	orl $0x80010000, %eax
-	movl %eax, %cr0
+void movecursor(unsigned int);
+void cls(void);
 
-	movl 4(%esp), %eax
-	ret
+#endif

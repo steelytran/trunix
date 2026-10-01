@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <trunix/tty.h>
+#include <sys/tty.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -80,10 +80,7 @@ printf(const char *fmt, ...)
 				continue;
 			} if (*fmt == 's') {
 				c = va_arg(args, char *);
-				while (*c)
-					putchar(*c++);
-
-				continue;
+				goto flush;
 			}
 
 			switch (*fmt) {
@@ -104,6 +101,7 @@ printf(const char *fmt, ...)
 
 			c = itoa(va_arg(args, int), base);
 
+flush:
 			while (*c != '\0')
 				putchar(*c++);
 

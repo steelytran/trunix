@@ -1,5 +1,5 @@
 /*
- * string
+ * lower level memory management - assembly helper routines
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,26 +16,35 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _STRING_H
-#define _STRING_H
+#define ASM_FILE
 
-#include <stddef.h>
+.text
+.globl write_cr3
+write_cr3:
+	movl %cr3, %eax
+	cmpl %eax, 4(%esp)
+	je 1f
 
-void *memcpy(void *restrict dst, const void *restrict src, size_t n);
-void *memcpyl(void *restrict dst, const void *restrict src, size_t n);
-void *memcpyw(void *restrict dst, const void *restrict src, size_t n);
-void *memset(void *b, int c, size_t len);
-void *memsetw(void *b, int c, size_t len);
-void *memsetl(void *b, int c, size_t len);
-void *memmove(void *, const void *, size_t);
+	movl 4(%esp), %eax
+	movl %eax, %cr3
+	jmp 1f
+1:
+	ret
 
-int memcmp(const void *, const void *, size_t);
+.globl flush_tlb
+flush_tlb:
+	movl %cr3, %eax
+	movl %eax, %cr3
+	ret
 
-int strcmp(const char *, const char *);
-int strncmp(const char *, const char *, size_t);
+.globl vm_enable_paging
+vm_enable_paging:
+	movl 4(%esp), %eax
+	movl %eax, %cr3
 
-size_t strlen(const char *);
+	movl %cr0, %eax
+	orl $0x80010000, %eax
+	movl %eax, %cr0
 
-char *strncpy(char *, const char *, size_t);
-
-#endif
+	movl 4(%esp), %eax
+	ret

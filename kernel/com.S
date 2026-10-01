@@ -22,29 +22,78 @@
 .text
 .globl init_serial
 init_serial:
-	/* disable interrupts */
-	movw $(COM1 + 1), %edx
+	movw $(COM1 + 1), %dx
 	xorb %al, %al
 	outb %al, %dx
 
-	/* enable divisor latch access bit */
-	movw $(COM1 + 3), %edx
+	movw $(COM1 + 3), %dx
 	movb $0x80, %al
 	outb %al, %dx
 
-	/* 115200 / 12 = 9600 baud*/
-	movw $(COM1), %edx
+	movw $(COM1), %dx
 	movb $12, %al
 	outb %al, %dx
 
-	/* divisor high byte */
-	movw $(COM1 + 1), %edx
+	movw $(COM1 + 1), %dx
 	xorb %al, %al
 	outb %al, %dx
 
-	/* 8 bits for data, no parity bits, 1 stop bit */
-	movw $(COM1 + 3), %edx
+	movw $(COM1 + 3), %dx
 	movb $0b00000011, %al
 	outb %al, %dx
 
+	movw $(COM1 + 2), %dx
+	movb $0b11000111, %al
+	outb %al, %dx
+
+	movw $(COM1 + 4), %dx
+	movb $0b00001011, %al
+	outb %al, %dx
+
+	/* test in loopback mode */
+	movw $(COM1 + 4), %dx
+	movb $0b00011110, %al
+	outb %al, %dx
+
+	movw $(COM1), %dx
+	movb $0x69, %al
+	outb %al, %dx
+
+	movw $(COM1), %dx
+	inb %dx, %al
+
+	cmpb $0x69, %al
+	je 1f
+
+	call panic
+
+1:
+	movw $(COM1 + 4), %dx
+	movb $0b00001011, %al
+	outb %al, %dx
+	ret
+
+.globl read_serial
+read_serial:
+	movw $(COM1 + 5), %dx
+1:
+	inb %dx, %al
+	testb $0b00000001, %al
+	jz 1b
+
+	movw $(COM1), %dx
+	inb %dx, %al
+	ret
+
+.globl write_serial
+write_serial:
+	movw $(COM1 + 5), %dx
+1:
+	inb %dx, %al
+	testb $0b00100000, %al
+	jz 1b
+
+	movw $(COM1), %dx
+	movl 4(%esp), %eax
+	outb %al, %dx
 	ret

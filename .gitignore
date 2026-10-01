@@ -1,7 +1,7 @@
 .DS_Store
-isodir
+iso
 *.iso
 *.o
 *.d
 trunix
-qemu*
+init

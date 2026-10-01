@@ -16,14 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <sys/trunix.h>
+#include <sys/multiboot.h>
+#include <sys/mman.h>
+#include <sys/tty.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
-
-#include <trunix/trunix.h>
-#include <sys/multiboot.h>
-#include <sys/mman.h>
-#include <trunix/tty.h>
 
 extern uint32_t _kernel_physical_base;
 extern uint32_t _kernel_unpaged_end;
@@ -33,7 +32,7 @@ struct kinfo k;
 struct kinfo *
 init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 {
-	int m;
+	uint32_t m;
 	multiboot_memory_map_t *mmap;
 	multiboot_module_t *fs;
 
@@ -61,9 +60,17 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 	    (uintptr_t)&_kernel_physical_base,
 	    (uintptr_t)&_kernel_unpaged_end);
 
+/*
+ * temporary solution to make null
+ * pointers actually work, could put
+ * something more useful here..
+ */
+	cut_memmap(&k, 0x0000, 0x1000);
+
+	/* initrd */
 	fs = (multiboot_module_t *)mb_info->mods_addr;
-	k.initrd_addr = fs->mod_start;
-	k.initrd_len = fs->mod_end - fs->mod_start;
+	k.initrd_start = fs->mod_start;
+	k.initrd_end = fs->mod_end;
 
 	/* setup paging */
 	pg_clear();

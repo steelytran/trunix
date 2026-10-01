@@ -19,105 +19,121 @@
 #define ASM_FILE
 
 .text
-.globl memcpy
-memcpy:
-	pushl %ecx
+.globl memmove
+memmove:
 	pushl %esi
 	pushl %edi
 
-	movl 16(%esp), %edi
-	movl 20(%esp), %esi
-	movl 24(%esp), %ecx
+	movl 12(%esp), %edi
+	movl 16(%esp), %esi
+	movl 20(%esp), %ecx
+
+	cmpl %esi, %edi
+	jg 1f
+
+	movl %ecx, %eax
+	decl %eax
+	addl %eax, %edi
+	addl %eax, %esi
+	std
+
+1:
+	rep movsb
+
+	movl 12(%esp), %eax
+
+	cld
+	popl %edi
+	popl %esi
+	ret 
+
+.globl memcpy
+memcpy:
+	pushl %esi
+	pushl %edi
+
+	movl 12(%esp), %edi
+	movl 16(%esp), %esi
+	movl 20(%esp), %ecx
 	rep movsb
 
 	movl 20(%esp), %eax
 
 	popl %edi
 	popl %esi
-	popl %ecx
 	ret 
 
 .globl memcpyw
 memcpyw:
-	pushl %ecx
 	pushl %esi
 	pushl %edi
 
-	movl 16(%esp), %edi
-	movl 20(%esp), %esi
-	movl 24(%esp), %ecx
+	movl 12(%esp), %edi
+	movl 16(%esp), %esi
+	movl 20(%esp), %ecx
 	rep movsw
 
 	movl 20(%esp), %eax
 
 	popl %edi
 	popl %esi
-	popl %ecx
 	ret 
 
 .globl memcpyl
 memcpyl:
-	pushl %ecx
 	pushl %esi
 	pushl %edi
 
-	movl 16(%esp), %edi
-	movl 20(%esp), %esi
-	movl 24(%esp), %ecx
+	movl 12(%esp), %edi
+	movl 16(%esp), %esi
+	movl 20(%esp), %ecx
 	rep movsl
 
 	movl 20(%esp), %eax
 
 	popl %edi
 	popl %esi
-	popl %ecx
 	ret 
 
 
 .globl memset
 memset:
-	pushl %ecx
 	pushl %edi
 
-	movl 12(%esp), %edi
-	movb 16(%esp), %al
-	movl 20(%esp), %ecx
+	movl 8(%esp), %edi
+	movb 12(%esp), %al
+	movl 16(%esp), %ecx
 	rep stosb
 
 	movl 12(%esp), %eax
 
 	popl %edi
-	popl %ecx
 	ret 
 
 .globl memsetw
 memsetw:
-	pushl %ecx
 	pushl %edi
 
-	movl 12(%esp), %edi
-	movl 16(%esp), %eax
-	movl 20(%esp), %ecx
+	movl 8(%esp), %edi
+	movw 12(%esp), %ax
+	movl 16(%esp), %ecx
 	rep stosw
 
 	movl 12(%esp), %eax
 
 	popl %edi
-	popl %ecx
 	ret 
 
 .globl memsetl
 memsetl:
-	pushl %ecx
 	pushl %edi
 
-	movl 12(%esp), %edi
-	movl 16(%esp), %eax
-	movl 20(%esp), %ecx
+	movl 8(%esp), %edi
+	movl 12(%esp), %eax
+	movl 16(%esp), %ecx
 	rep stosl
 
 	movl 12(%esp), %eax
 
 	popl %edi
-	popl %ecx
 	ret 

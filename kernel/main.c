@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <trunix/trunix.h>
-#include <trunix/tty.h>
-#include <sys/kthread.h>
+#include <sys/trunix.h>
+#include <sys/tty.h>
+#include <sys/proc.h>
 #include <sys/mman.h>
 #include <stdio.h>
 #include <string.h>
@@ -33,9 +33,6 @@ struct kinfo k;
 void
 kmain(struct kinfo *kernel_info)
 {
-	uint32_t *fs;
-	int i;
-
 	init_gdt();
 	init_tss();
 	init_idt();
@@ -44,12 +41,9 @@ kmain(struct kinfo *kernel_info)
 
 	pg_clear_identity();
 	init_mem(&k);
+	init_serial();
+	load_initrd();
 
-	cls();
-
-	//load_initrd(&k);
-
-	kthread_init();
-	init_kbd();
-	sched_init();
+	initsys();
+	init_sched();
 }

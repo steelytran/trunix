@@ -18,37 +18,35 @@
 
 #define ASM_FILE
 
-#define ESP 0
-#define ESP0 4
-#define CR3 8
-#define STATE 12
-#define NEXT 13
-
-#define PREV_TASK 20
-#define NEXT_TASK 24
-
 .text
-/* void switch_to(struct task *prev, struct task *next); */
+/*
+ * void
+ * switch_to(struct context **prev, struct context *next)
+ */
 .globl switch_to
 switch_to:
+	movl 4(%esp), %eax /* old thread */
+	movl 8(%esp), %edx /* new thread */
+
 	pushl %ebx
+	pushl %ebp
 	pushl %esi
 	pushl %edi
-	pushl %ebp
 
-	/* save prev task sp */
-	movl PREV_TASK(%esp), %esi
-	movl %esp, ESP(%esi)
+	movl %esp, (%eax)
+	movl %edx, %esp
 
-	/* next task sp */
-	movl NEXT_TASK(%esp), %edi
-	movl ESP(%edi), %esp
-
-1:
-	popl %ebp
 	popl %edi
 	popl %esi
+	popl %ebp
 	popl %ebx
-
-	sti
 	ret
+
+.globl trapret
+trapret:
+	popal
+	popl %gs
+	popl %fs
+	popl %es
+	popl %ds
+	iret

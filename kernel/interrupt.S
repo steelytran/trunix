@@ -16,19 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define ASM_FILE
-#include <sys/kthread.h>
+.extern fork
+.extern printf
 
 .data
-.extern kbdstate
-
-.globl keybuffer
-keybuffer:
-	.fill 12
-
-.globl keysp
-keysp:
-	.word 0
+panic_msg:	.asciz "KERNEL PANIC!\n"
+pf_msg:		.asciz "Page fault: 0b%b\nAddress: 0x%x\n"
+inv_op_msg:	.asciz "Invalid opcode"
+inv_tss_msg:	.asciz "Invalid TSS\n"
+gpf_msg:	.asciz "General protection fault\n"
 
 .text
 /* divide by zero */
@@ -64,9 +60,17 @@ INT_0x05:
 /* invalid opcode */
 .globl INT_0x06
 INT_0x06:
+	pushl $panic_msg
+	call printf
+	addl $4, %esp
+
+	pushl $inv_op_msg
+	call printf
+
+1:
 	cli
 	hlt
-	jmp INT_0x06
+	jmp 1b
 
 /* math coprocessor not available */
 .globl INT_0x07
@@ -77,6 +81,7 @@ INT_0x07:
 .globl INT_0x08
 INT_0x08:
 	cli
+	popl %eax
 	hlt
 	jmp INT_0x08
 
@@ -88,9 +93,16 @@ INT_0x09:
 /* invalid TSS */
 .globl INT_0x0A
 INT_0x0A:
-	cli
+	pushl $panic_msg
+	call printf
+	addl $4, %esp
+
+	pushl $inv_op_msg
+	call printf
+
+1:	cli
 	hlt
-	jmp INT_0x0A
+	jmp 1b
 
 /* segment not present */
 .globl INT_0x0B
@@ -107,6 +119,13 @@ INT_0x0C:
 /* general protection fault*/
 .globl INT_0x0D
 INT_0x0D:
+	pushl $panic_msg
+	call printf
+	addl $4, %esp
+
+	pushl $gpf_msg
+	call printf
+
 1:	cli
 	hlt
 	jmp 1b
@@ -115,6 +134,17 @@ INT_0x0D:
 .globl INT_0x0E
 INT_0x0E:
 	popl %eax
+	movl %cr2, %ecx
+
+	pushl $panic_msg
+	call printf
+	addl $4, %esp
+
+	pushl %ecx
+	pushl %eax
+	pushl $pf_msg
+	call printf
+
 1:	cli
 	hlt
 	jmp 1b
@@ -152,19 +182,29 @@ INT_0x15:
 /* programmable interval timer */
 .globl INT_0x20
 INT_0x20:
+	pushl %ds
+	pushl %es
+	pushl %fs
+	pushl %gs
 	pushal
 
 	movb $0x20, %al
 	outb %al, $0x20
 
-	call schedule
+	call yield
 
 	popal
+	popl %gs
+	popl %fs
+	popl %es
+	popl %ds
 	iret
 
 /* ps2 keyboard */
 .globl INT_0x21
 INT_0x21:
+	iret
+
 	pushl %eax
 	pushl %ebx
 
@@ -182,14 +222,79 @@ INT_0x21:
 	/* scancode */
 	andb $0x7f, %ah
 
-	incl keysp
-	movl keysp, %ebx
-	movb %ah, keybuffer(%ebx)
-
-	movl kbdstate, %ebx
-	movl $READY, (%ebx)
-
 1:
 	popl %ebx
 	popl %eax
 	iret
+
+/* syscall */
+.globl INT_0x80
+INT_0x80:
+	pushl %ds
+	pushl %es
+	pushl %fs
+	pushl %gs
+	pushal
+
+	jmp *tbl_syscall(, %eax, 4)
+
+end_syscall:
+	popal
+	popl %gs
+	popl %fs
+	popl %es
+	popl %ds
+	iret
+
+tbl_syscall:
+	.long restart /* 0 */
+	.long exit /* 1 */
+	.long fork /* 2 */
+	.long read /* 3 */
+	.long write /* 4 */
+	.long open /* 5 */
+	.long close /* 6 */
+	.long creat /* 7 */
+	.long execve /* 8 */
+	.long mmap /* 9 */
+
+/*
+ * temporary for unimplemented syscalls
+ */
+restart:
+	jmp end_syscall
+
+exit:
+	jmp end_syscall
+
+fork:
+	/* call sys_fork */
+	jmp end_syscall
+
+read:
+	jmp end_syscall
+
+write:
+	jmp end_syscall
+
+open:
+	jmp end_syscall
+
+close:
+	jmp end_syscall
+
+creat:
+	jmp end_syscall
+
+execve:
+/*
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+	call sys_execve
+	addl $4 * 3, %esp
+*/
+	jmp end_syscall
+
+mmap:
+	jmp end_syscall
