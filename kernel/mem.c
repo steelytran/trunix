@@ -16,154 +16,145 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/mman.h>
+#include <sys/queue.h>
 #include <sys/multiboot.h>
-#include <sys/trunix.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-/* bitmap manipulation macros */
-#define bit_set(x, n)	((x) |= (1 << (n)))
-#define bit_unset(x, n)	((x) &= ~(1 << (n)))
-#define bit_isset(x, n)	((x) & (1 << (n)))
+#include "vm.h"
+#include "trunix.h"
 
 uint32_t *kpagedir;
 
-static uint32_t page_bitmap[0x100000 / 32];
-static unsigned int last_page;
+LIST_HEAD(memlist, block);
+static struct memlist freelist = LIST_HEAD_INITIALIZER(freelist);
 
-void *mmap(void *, size_t, int);
+struct block {
+	unsigned int sz;
+	LIST_ENTRY(block) entry;
+};
+
 void munmap(void *, size_t);
 void init_mem(struct kinfo *);
 uint32_t *copykvm(void);
 void alloc_pt(uint32_t *, uint32_t, size_t, uint32_t, int);
+void *alloc_mem(size_t);
+void free_mem(void *, size_t);
 
-static inline uintptr_t alloc_pages(int, int, int);
-static inline void free_pages(int, int);
-
-static inline void
-pg_bitmap_alloc(uintptr_t addr)
+void
+free_mem(void *addr, size_t sz)
 {
-	unsigned int i = addr >> 5;
-	unsigned int order = addr % 32;
+	struct block *p, *n, *tmp;
+	unsigned int page_n = sz >> 12;
 
-	bit_set(page_bitmap[i], order);
-}
+	if (addr == NULL)
+		panic();
 
-static inline void
-pg_bitmap_free(uintptr_t addr)
-{
-	unsigned int i = addr >> 5;
-	unsigned int order = addr % 32;
+	addr = (void *)pg_rounddown((uint32_t)addr);
+	sz = pg_roundup(sz);
 
-	bit_unset(page_bitmap[i], order);
-}
+	memset(addr, 0x69, sz);
+	n = (struct block *)addr;
+	n->sz = page_n;
 
-static inline int
-pg_bitmap_isused(unsigned int pg)
-{
-	unsigned int i = pg >> 5;
-	unsigned int order = pg % 32;
+	LIST_FOREACH_SAFE(p, &freelist, entry, tmp) {
+		if ((uintptr_t)p + (p->sz << 12) == (uintptr_t)n) {
+			n = p;
+			n->sz += page_n;
+			continue;
+		}
 
-	return bit_isset(page_bitmap[i], order);
-}
+		if ((uintptr_t)n + (n->sz << 12) == (uintptr_t)p) {
+			LIST_REMOVE(p, entry);
+			n->sz += p->sz;
+		}
+	}
 
-static inline void
-free_pages(int base, int page_n)
-{
-	int i;
-	for (i = base; i < base + page_n; ++i)
-		pg_bitmap_free(i);
-}
+	LIST_FOREACH_SAFE(p, &freelist, entry, tmp) {
+		if (p->sz >= n->sz)
+			LIST_INSERT_BEFORE(p, n, entry);
+		else if(tmp == NULL)
+			LIST_INSERT_AFTER(p, n, entry);
+		else
+			continue;
 
-static inline uintptr_t
-alloc_pages(int base, int page_n, int prot)
-{
-	int i;
-	uintptr_t p_base, v_start, v_end;
-
-	for (i = base; i < base + page_n; ++i)
-		pg_bitmap_alloc(i);
-
-	p_base = base << 12;
-	v_start = phys2virt(p_base);
-	v_end = phys2virt(i << 12);
-	pg_map(p_base, v_start, v_end, prot);
-
-	return v_start;
+		break;
+	}
 }
 
 void *
-mmap(void *addr, size_t len, int flags)
+alloc_mem(size_t sz)
 {
-	uint32_t i;
-	unsigned int page_n, free = 0;
+	struct block *p, *s;
+	void *addr;
+	unsigned int page_n = sz >> 12;
 
-	if (len == 0)
-		goto err;
+	LIST_FOREACH(p, &freelist, entry)
+		if (p->sz >= page_n)
+			break;
 
-	page_n = pg_roundup(len) >> 12;
+	if (p == NULL)
+		return NULL;
 
-	if (addr != NULL)
-		return (void *)
-		alloc_pages((int)addr >> 12, page_n, flags);
+	addr = (void *)p;
+	sz = pg_roundup(sz);
 
-	for (i = 0; i <= last_page; ++i) {
-		if (pg_bitmap_isused(i)) {
-			free = 0;
-			continue;
-		} if (++free == page_n)
-			return (void *)
-			alloc_pages(i + 1 - page_n, page_n, flags);
+	if (p->sz > (3 * page_n) / 2) {
+		s = (struct block *)((char *)p + sz);
+		s->sz = p->sz - page_n;
+		LIST_INSERT_AFTER(p, s, entry);
 	}
 
-err:
-	return NULL;
-}
+	LIST_REMOVE(p, entry);
 
-void
-munmap(void *addr, size_t len)
-{
-	int page_n = len >> 12;
-	unsigned int pg = virt2phys(addr) >> 12;
-
-	pg_free((uintptr_t)addr, (uint32_t)addr + len);
-
-	if (page_n >= 0)
-		free_pages(pg, page_n);
-
-	return;
+	return addr;
 }
 
 void
 init_mem(struct kinfo *k)
 {
-	int m;
-	uintptr_t i;
+	int m = 0;
+	struct block *p, *n, *tmp;
 
-	memsetl(page_bitmap, ~0, 0x100000 >> 5);
+	LIST_INIT(&freelist);
 
-	for (m = 0; m < k->mmap_n; ++m) {
+	for (; m < k->mmap_n; ++m) {
 		if (k->memmap[m].type != MULTIBOOT_MEMORY_AVAILABLE)
 			continue;
 
-		for (i = k->memmap[m].addr;
-		     i <= k->memmap[m].addr + k->memmap[m].len;
-		     i += 0x1000)
-			pg_bitmap_free(i >> 12);
+		p = (struct block *)phys2virt(k->memmap[m].addr);
+		p->sz = (k->memmap[m].len >> 12);
+
+		if (LIST_EMPTY(&freelist))
+			LIST_INSERT_HEAD(&freelist, p, entry);
+		else {
+			LIST_FOREACH_SAFE(n, &freelist, entry, tmp)
+				if (n->sz > p->sz || tmp == NULL)
+					break;
+
+			LIST_INSERT_AFTER(n, p, entry);
+		}
 	}
 
-	last_page = i >> 12;
 	kpagedir = (uint32_t *)phys2virt(read_cr3());
 	return;
+}
+
+void
+printmem(void)
+{
+	struct block *p;
+
+	LIST_FOREACH(p, &freelist, entry)
+		debug("0x%x\n", p);
 }
 
 uint32_t *
 copykvm(void)
 {
-	uint32_t *pd = mmap(NULL, 0x1000, PG_RW | PG_P);
+	uint32_t *pd = alloc_mem(0x1000);
 	memcpy(pd, kpagedir, 0x1000);
 	return pd;
 }
@@ -184,7 +175,7 @@ size_t len, uint32_t frame, int flags)
 		pte = (v_start >> 12) & 0x3FF;
 
 		if (!(pd[pde] & 1)) {
-			pt = mmap(NULL, 0x1000, flags);
+			pt = alloc_mem(0x1000);
 			pd[pde] = (virt2phys(pt) & 0xFFFFF000) | flags;
 		} else {
 			pt = (uint32_t *)phys2virt(pd[pde] & 0xFFFFF000);

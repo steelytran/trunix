@@ -16,16 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/trunix.h>
 #include <sys/multiboot.h>
-#include <sys/mman.h>
-#include <sys/tty.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
 
-extern uint32_t _kernel_physical_base;
-extern uint32_t _kernel_unpaged_end;
+#include "trunix.h"
+#include "vm.h"
 
 struct kinfo k;
 
@@ -57,8 +54,8 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 	}
 
 	cut_memmap(&k,
-	    (uintptr_t)&_kernel_physical_base,
-	    (uintptr_t)&_kernel_unpaged_end);
+	    (uint32_t)_kernel_physical_base,
+	    (uint32_t)_kernel_unpaged_end);
 
 /*
  * temporary solution to make null

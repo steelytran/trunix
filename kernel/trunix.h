@@ -16,13 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _SYS_TRUNIX_H
-#define _SYS_TRUNIX_H
+#ifndef _TRUNIX_H
+#define _TRUNIX_H
 
-#include <sys/file.h>
 #include <sys/multiboot.h>
 #include <stdint.h>
 #include <stddef.h>
+
+#include "file.h"
 
 #define kmain __k_unpaged_kmain
 
@@ -86,13 +87,13 @@ char *itoa(int, unsigned int);
 void init_serial(void);
 uint8_t read_serial(void);
 void write_serial(uint8_t);
+void debug(const char *, ...);
 
 void init_gdt(void);
 void init_tss(void);
 void init_idt(void);
 
 uint32_t read_cr4(void);
-uint32_t read_cr3(void);
 uint32_t read_cr2(void);
 uint32_t read_cr1(void);
 uint32_t read_cr0(void);

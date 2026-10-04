@@ -16,8 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*
 .extern fork
-.extern printf
+.extern debug
+*/
 
 .data
 panic_msg:	.asciz "KERNEL PANIC!\n"
@@ -61,11 +63,11 @@ INT_0x05:
 .globl INT_0x06
 INT_0x06:
 	pushl $panic_msg
-	call printf
+	call debug
 	addl $4, %esp
 
 	pushl $inv_op_msg
-	call printf
+	call debug
 
 1:
 	cli
@@ -94,11 +96,11 @@ INT_0x09:
 .globl INT_0x0A
 INT_0x0A:
 	pushl $panic_msg
-	call printf
+	call debug
 	addl $4, %esp
 
 	pushl $inv_op_msg
-	call printf
+	call debug
 
 1:	cli
 	hlt
@@ -120,11 +122,11 @@ INT_0x0C:
 .globl INT_0x0D
 INT_0x0D:
 	pushl $panic_msg
-	call printf
+	call debug
 	addl $4, %esp
 
 	pushl $gpf_msg
-	call printf
+	call debug
 
 1:	cli
 	hlt
@@ -137,13 +139,13 @@ INT_0x0E:
 	movl %cr2, %ecx
 
 	pushl $panic_msg
-	call printf
+	call debug
 	addl $4, %esp
 
 	pushl %ecx
 	pushl %eax
 	pushl $pf_msg
-	call printf
+	call debug
 
 1:	cli
 	hlt
@@ -191,7 +193,7 @@ INT_0x20:
 	movb $0x20, %al
 	outb %al, $0x20
 
-	call yield
+	//call yield
 
 	popal
 	popl %gs

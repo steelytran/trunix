@@ -16,15 +16,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/trunix.h>
 #include <sys/queue.h>
-#include <sys/proc.h>
-#include <sys/mman.h>
 #include <sys/cdefs.h>
-#include <sys/file.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "trunix.h"
+#include "proc.h"
+#include "vm.h"
+#include "file.h"
 
 #define STACK_SIZE 0x1000
 #define KSTACK_SIZE 0x1000
@@ -101,7 +102,7 @@ alloc_thread(void)
 	uintptr_t kstack;
 	uintptr_t sp;
 
-	kstack = (uintptr_t)mmap(NULL, KSTACK_SIZE, PG_RW | PG_P);
+	kstack = (uintptr_t)alloc_mem(KSTACK_SIZE);
 	p = (struct proc *)(kstack + KSTACK_SIZE - sizeof(*p));
 	p->kstack = kstack;
 	sp = (uintptr_t)p;
@@ -221,8 +222,7 @@ found:
 
 	sz = max - min + STACK_SIZE;
 
-	mem = (uintptr_t)mmap(NULL,
-	    sz, PG_US | PG_RW | PG_P);
+	mem = (uintptr_t)alloc_mem(sz);
 
 	memset((void *)mem, 0, sz);
 
@@ -344,7 +344,7 @@ sys_fork(void)
 
 	sz = curthread->end - curthread->start;
 
-	mem = (uintptr_t)mmap(NULL, sz, PG_US | PG_RW | PG_P);
+	mem = (uintptr_t)alloc_pages(sz, PG_US | PG_RW | PG_P);
 	memset((void *)mem, 0, sz);
 	p->start = mem;
 
@@ -354,7 +354,7 @@ sys_fork(void)
 	p->cr3 = (uintptr_t)virt2phys(pd);
 	alloc_pt(pd, 0x40000000, sz, virt2phys(mem), PG_US | PG_RW | PG_P);
 
-	p->stack = (uintptr_t)mmap(NULL, STACK_SIZE, PG_US | PG_RW | PG_P);
+	p->stack = (uintptr_t)alloc_pages(STACK_SIZE, PG_US | PG_RW | PG_P);
 	memmove((void *)p->stack, (void *)curthread->stack, STACK_SIZE);
 
 	alloc_pt(pd,
@@ -429,7 +429,7 @@ found:
 
 	sz = max - min + STACK_SIZE;
 
-	mem = (uintptr_t)mmap(NULL,
+	mem = (uintptr_t)alloc_mem(NULL,
 	    sz, PG_US | PG_RW | PG_P);
 
 	memset((void *)mem, 0, sz);

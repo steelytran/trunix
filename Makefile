@@ -33,14 +33,32 @@ CFLAGS := -fno-pic -fno-pie -fno-builtin -mno-mmx -mno-sse \
 BIN := trunix
 INIT := initrd/sbin/init
 
-UNPAGED_OBJS = head.S.o trunix_init.c.o paging.c.o pg_utils.S.o util.S.o string.S.o
+UNPAGED_OBJS = \
+head.S.o \
+trunix_init.c.o \
+paging.c.o \
+pg_utils.S.o \
+util.S.o \
+string.S.o \
+com.S.o \
+serial.c.o \
 
 K_OBJS = \
 $(addprefix unpaged_,$(UNPAGED_OBJS)) \
-string.S.o printf.c.o main.c.o interrupt.S.o \
-gate.S.o paging.c.o pg_utils.S.o tty.S.o util.S.o \
-mem.c.o proc.c.o switch.S.o string.c.o switch.S.o \
-com.S.o initrd.c.o
+main.c.o \
+gate.S.o \
+interrupt.S.o \
+paging.c.o \
+pg_utils.S.o \
+mem.c.o \
+string.S.o \
+util.S.o \
+com.S.o \
+serial.c.o \
+initrd.c.o \
+string.c.o \
+proc.c.o \
+switch.S.o \
 
 OBJS = $(addprefix kernel/,$(K_OBJS))
 
@@ -74,6 +92,7 @@ qemu: iso
 	qemu-system-i386 \
 	-cdrom trunix.iso \
 	-display cocoa,zoom-to-fit=on \
+	-serial mon:stdio \
 	-no-reboot -no-shutdown
 
 qemu-gdb: iso

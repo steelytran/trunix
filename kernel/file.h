@@ -1,5 +1,5 @@
 /*
- * teletype
+ * virtual file system
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,17 +16,51 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _SYS_TTY_H
-#define _SYS_TTY_H
+#ifndef _FILE_H
+#define _FILE_H
 
+#include <stddef.h>
 #include <stdint.h>
 
-struct tty {
-	uint16_t buf[128];
-	int pos;
+#define MAXMEMMAP 32
+#define DIRSIZ 128
+#define ROOT_INO 2
+
+enum major_ids { 
+	CONSOLE,
 };
 
-void movecursor(unsigned int);
-void cls(void);
+struct file {
+	enum {FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE} type;
+	int ref;
+	struct inode *ip;
+	int off;
+	unsigned int major;
+};
+
+struct devrw {
+	int (*read)(int, uintptr_t, int);
+	int (*write)(int, uintptr_t, int);
+};
+
+extern struct devrw devrw[];
+
+struct dirent {
+	unsigned int ino_id;
+	char name[DIRSIZ];
+};
+
+struct inode {
+	unsigned short mode;
+	unsigned short nlink;
+	short uid;
+	short gid;
+	size_t size;
+	long a_time, m_time, s_time;
+	unsigned int major, minor;
+	unsigned int id;
+	enum {VFILE, VLINK, VCHAR, VBLK, VDIR, VFIFO} type;
+	uintptr_t addr;
+};
 
 #endif

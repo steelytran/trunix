@@ -37,7 +37,6 @@
 
 .text
 	ARG_LONG_GET read_cr4, %cr4
-	ARG_LONG_GET read_cr3, %cr3
 	ARG_LONG_GET read_cr2, %cr2
 	ARG_LONG_GET read_cr1, %cr1
 	ARG_LONG_GET read_cr0, %cr0

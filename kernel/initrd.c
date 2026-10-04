@@ -16,11 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/trunix.h>
-#include <sys/mman.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
+
+#include "trunix.h"
+#include "vm.h"
 
 extern struct kinfo k;
 
@@ -46,17 +47,12 @@ void
 load_initrd(void)
 {
 	size_t len = k.initrd_end - k.initrd_start;
-
-	unsigned int i = 2;
-	void *tar = mmap((void *)k.initrd_start,
-	    len,
-	    PG_RW | PG_P
-	);
-
+	void *tar = (void *)phys2virt(k.initrd_start);
 	uint8_t *p = tar;
+	unsigned int i = ROOT_INO;
 
-	struct inode *in = mmap(NULL, 0x2000, PG_RW | PG_P);
-	struct dirent *dir = mmap(NULL, 0x2000, PG_RW | PG_P);
+	struct inode *in = alloc_mem(0x2000);
+	struct dirent *dir = alloc_mem(0x2000);
 
 	k.ino_tbl = in;
 	k.dir_tbl = dir;

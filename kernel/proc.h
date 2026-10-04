@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _SYS_PROC_H
-#define _SYS_PROC_H
+#ifndef _PROC_H
+#define _PROC_H
 
 #include <sys/queue.h>
 #include <sys/cdefs.h>

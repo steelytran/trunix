@@ -42,9 +42,15 @@ vm_enable_paging:
 	movl 4(%esp), %eax
 	movl %eax, %cr3
 
+	movl %cr4, %eax
+	orl $0b10010000, %eax
+	movl %eax, %cr4
+
 	movl %cr0, %eax
 	orl $0x80010000, %eax
 	movl %eax, %cr0
 
 	movl 4(%esp), %eax
+
+	addl $_kernel_offset, %esp
 	ret

@@ -16,16 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/trunix.h>
-#include <sys/tty.h>
-#include <sys/proc.h>
-#include <sys/mman.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "trunix.h"
+#include "proc.h"
+#include "vm.h"
 #include "kbd.h"
 
 struct kinfo k;
+
+extern void printmem(void);
 
 /*
  * kernel main
@@ -37,11 +38,13 @@ kmain(struct kinfo *kernel_info)
 	init_tss();
 	init_idt();
 
-	memcpy(&k, kernel_info, sizeof(struct kinfo));
-
-	pg_clear_identity();
-	init_mem(&k);
 	init_serial();
+
+	memcpy(&k, kernel_info, sizeof(struct kinfo));
+	pg_clear_identity();
+
+	init_mem(&k);
+
 	load_initrd();
 
 	initsys();

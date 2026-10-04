@@ -1,5 +1,5 @@
-#ifndef _SYS_KBD_H
-#define _SYS_KBD_H
+#ifndef _KBD_H
+#define _KBD_H
 
 #define NIL 0
 
