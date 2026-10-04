@@ -32,7 +32,7 @@ typedef struct __FILE {
 	short _fd;
 } FILE;
 
-void putchar(char);
-int printf(const char *, ...);
+putchar(char);
+printf(const char *, ...);
 
 #endif

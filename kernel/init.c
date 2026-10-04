@@ -17,8 +17,7 @@
  */
 
 #include <sys/multiboot.h>
-#include <stdint.h>
-#include <stddef.h>
+#include <sys/cdefs.h>
 #include <stdio.h>
 
 #include "trunix.h"
@@ -26,25 +25,26 @@
 
 struct kinfo k;
 
-struct kinfo *
-init_trunix(multiboot_info_t *mb_info, uint32_t magic)
+init_trunix(mb_info, magic)
+struct multiboot_info *mb_info;
+u32 magic;
 {
-	uint32_t m;
-	multiboot_memory_map_t *mmap;
-	multiboot_module_t *fs;
+	unsigned long m;
+	struct multiboot_mmap_entry *mmap;
+	struct multiboot_mod_list *fs;
 
 	if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
-		panic();
+		return -1;
 
 	if (!(mb_info->flags >> 6 & 1))
-		panic();
+		return -1;
 
 	k.mbi = *mb_info;
 
 	for (m = 0; m < mb_info->mmap_length;
 	     m += mmap->size + sizeof(mmap->size)) {
 
-		mmap = (multiboot_memory_map_t *)(mb_info->mmap_addr + m);
+		mmap = (struct multiboot_mmap_entry *)(mb_info->mmap_addr + m);
 
 		if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE)
 			add_memmap(&k,
@@ -54,8 +54,8 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 	}
 
 	cut_memmap(&k,
-	    (uint32_t)_kernel_physical_base,
-	    (uint32_t)_kernel_unpaged_end);
+	    (unsigned long)_kernel_physical_base,
+	    (unsigned long)_kernel_unpaged_end);
 
 /*
  * temporary solution to make null
@@ -65,7 +65,7 @@ init_trunix(multiboot_info_t *mb_info, uint32_t magic)
 	cut_memmap(&k, 0x0000, 0x1000);
 
 	/* initrd */
-	fs = (multiboot_module_t *)mb_info->mods_addr;
+	fs = (struct multiboot_mod_list *)mb_info->mods_addr;
 	k.initrd_start = fs->mod_start;
 	k.initrd_end = fs->mod_end;
 

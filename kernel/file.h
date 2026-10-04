@@ -19,15 +19,15 @@
 #ifndef _FILE_H
 #define _FILE_H
 
+#include <sys/cdefs.h>
 #include <stddef.h>
-#include <stdint.h>
 
 #define MAXMEMMAP 32
 #define DIRSIZ 128
 #define ROOT_INO 2
 
 enum major_ids { 
-	CONSOLE,
+	CONSOLE
 };
 
 struct file {
@@ -39,8 +39,8 @@ struct file {
 };
 
 struct devrw {
-	int (*read)(int, uintptr_t, int);
-	int (*write)(int, uintptr_t, int);
+	int (*read)(int, u32, int);
+	int (*write)(int, u32, int);
 };
 
 extern struct devrw devrw[];
@@ -55,12 +55,12 @@ struct inode {
 	unsigned short nlink;
 	short uid;
 	short gid;
-	size_t size;
+	u32 size;
 	long a_time, m_time, s_time;
 	unsigned int major, minor;
 	unsigned int id;
 	enum {VFILE, VLINK, VCHAR, VBLK, VDIR, VFIFO} type;
-	uintptr_t addr;
+	u32 addr;
 };
 
 #endif

@@ -17,12 +17,13 @@
  */
 
 #include <stdarg.h>
-#include <stdint.h>
 
 #include "trunix.h"
 
 char *
-itoa(int n, unsigned int base)
+itoa(n, base)
+int n;
+unsigned base;
 {
 	int j, i = 0;
 	char c;
@@ -61,7 +62,6 @@ itoa(int n, unsigned int base)
 	return s;
 }
 
-void
 debug(const char *fmt, ...)
 {
 	char *c;

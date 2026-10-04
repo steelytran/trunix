@@ -26,8 +26,7 @@
 
 struct kinfo k;
 
-void
-test(void)
+test()
 {
 /*
  * for whatever reason, the first call
@@ -43,8 +42,8 @@ test(void)
 /*
  * kernel main
  */
-void
-kmain(struct kinfo *kernel_info)
+kmain(kernel_info)
+struct kinfo *kernel_info;
 {
 	init_gdt();
 	init_tss();
