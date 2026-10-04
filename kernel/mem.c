@@ -142,15 +142,6 @@ init_mem(struct kinfo *k)
 	return;
 }
 
-void
-printmem(void)
-{
-	struct block *p;
-
-	LIST_FOREACH(p, &freelist, entry)
-		debug("0x%x\n", p);
-}
-
 uint32_t *
 copykvm(void)
 {

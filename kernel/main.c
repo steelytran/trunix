@@ -26,7 +26,19 @@
 
 struct kinfo k;
 
-extern void printmem(void);
+void
+test(void)
+{
+/*
+ * for whatever reason, the first call
+ * is skipped and instead switches
+ * immediately, the rest are fine?
+ */
+	debug("asdfasdfasdfasdf\n");
+	debug("asdfasdfasdfasdf\n");
+	debug("asdfasdfasdfasdf\n");
+	for (;;);
+}
 
 /*
  * kernel main
@@ -41,12 +53,13 @@ kmain(struct kinfo *kernel_info)
 	init_serial();
 
 	memcpy(&k, kernel_info, sizeof(struct kinfo));
-	pg_clear_identity();
 
+	pg_clear_identity();
 	init_mem(&k);
 
 	load_initrd();
 
 	initsys();
+	enqueue(kthread_create(test));
 	init_sched();
 }

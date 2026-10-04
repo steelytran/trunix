@@ -193,7 +193,7 @@ INT_0x20:
 	movb $0x20, %al
 	outb %al, $0x20
 
-	//call yield
+	call yield
 
 	popal
 	popl %gs

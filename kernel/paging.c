@@ -164,11 +164,17 @@ pg_identity(void)
 void
 pg_clear_identity(void)
 {
-	uint32_t i = 0;
+	uint32_t i;
 
 	pagedir = (uint32_t *)phys2virt(read_cr3());
-	while (i < ((uint32_t)_kernel_offset >> 22))
+
+	for (i = 0; i < 1024; ++i) {
+		if (i > ((uintptr_t)_kernel_physical_base >> 22) ||
+		    i < ((uintptr_t)_kernel_offset + (uintptr_t)_kernel_unpaged_end) >> 22)
+			continue;
+
 		pagedir[i++] = 0;
+	}
 }
 
 void
