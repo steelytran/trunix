@@ -14,28 +14,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-CC := clang
-AS := clang
-LD := ld.lld
-OBJCOPY := llvm-objcopy
-GRUB := i686-elf-grub
+CC = clang
+AS = clang
+LD = ld.lld
+OBJCOPY = llvm-objcopy
+GRUB = i686-elf-grub
 
-INCLUDE := -isystem include
-TARGET := -arch i386 -target i386-unknown-none-elf
+INCLUDE = -isystem include
+TARGET = -arch i386 -target i386-unknown-none-elf
 
-LDFLAGS := -T kernel/linker.ld 
-ASFLAGS := $(INCLUDE) $(TARGET)
-CFLAGS := -fno-pic -fno-pie -fno-builtin -mno-mmx -mno-sse \
--fno-stack-protector -mgeneral-regs-only -mno-sse2 -mno-3dnow \
--static -fno-strict-aliasing -ffreestanding -nostdlib -Wall \
--Wextra -Wpedantic -glldb -g3 -std=c99 $(INCLUDE) $(TARGET)
+LDFLAGS = -T kernel/linker.ld 
+ASFLAGS = $(INCLUDE) $(TARGET)
+CFLAGS =  -static -g3 -std=c89 -ffreestanding \
+-nostdlib -glldb $(INCLUDE) $(TARGET)
 
-BIN := trunix
-INIT := initrd/sbin/init
+CFLAGS += -fno-pic -fno-pie -fno-builtin -mno-mmx \
+-mno-sse -mno-sse2 -mno-3dnow -fno-strict-aliasing \
+-fno-stack-protector -mgeneral-regs-only
+
+CFLAGS += -Wno-int-conversion -Wno-incompatible-pointer-types \
+-Wno-incompatible-function-pointer-types \
+
+BIN = trunix
+INIT = initrd/sbin/init
 
 UNPAGED_OBJS = \
 head.S.o \
-trunix_init.c.o \
+init.c.o \
 paging.c.o \
 pg_utils.S.o \
 util.S.o \

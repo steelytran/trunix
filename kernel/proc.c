@@ -18,9 +18,9 @@
 
 #include <sys/queue.h>
 #include <sys/cdefs.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "trunix.h"
 #include "proc.h"
@@ -32,7 +32,7 @@
 
 #define ELFMAGIC 0x464C457F
 
-extern uint32_t *kpagedir;
+extern u32 *kpagedir;
 extern struct task_state_segment tss;
 extern struct kinfo k;
 
@@ -40,89 +40,89 @@ static struct proc *curthread;
 static struct proc *idle;
 
 struct elfhdr {
-	uint32_t magic;
-	uint8_t elf[12];
-	uint16_t type;
-	uint16_t machine;
-	uint32_t version;
-	uint32_t entry;
-	uint32_t phoff;
-	uint32_t shoff;
-	uint32_t flags;
-	uint16_t hdrsz;
-	uint16_t phentsz;
-	uint16_t ph_n;
-	uint16_t shentsz;
-	uint16_t sh_n;
-	uint16_t shstrndx;
+	u32 magic;
+	u8 elf[12];
+	u16 type;
+	u16 machine;
+	u32 version;
+	u32 entry;
+	u32 ph_off;
+	u32 sh_off;
+	u32 flags;
+	u16 hdrsz;
+	u16 ph_entsz;
+	u16 ph_n;
+	u16 sh_entsz;
+	u16 sh_n;
+	u16 sh_strndx;
 };
 
 struct proghdr {
-	uint32_t type;
-	uint32_t off;
-	uint32_t vaddr;
-	uint32_t paddr;
-	uint32_t filesz;
-	uint32_t memsz;
-	uint32_t flags;
-	uint32_t align;
+	u32 type;
+	u32 off;
+	u32 vaddr;
+	u32 paddr;
+	u32 filesz;
+	u32 memsz;
+	u32 flags;
+	u32 align;
 };
 
 TAILQ_HEAD(pqueue, proc);
 struct pqueue queue = TAILQ_HEAD_INITIALIZER(queue);
 
-extern void trapret(void (*)(void));
+extern trapret();
 
-void init_sched(void);
-void initsys(void);
+void init_sched();
+void initsys();
 void enqueue(struct proc *);
-void dequeue(void);
-void yield(void);
-struct proc *kthread_create(void (*)(void));
-__dead void scheduler(void);
+void dequeue();
+void yield();
+struct proc *kthread_create(void(*)());
+__dead void scheduler();
 
-int sys_fork(void);
-int sys_execve(const char *path, const char **argv, const char **envp);
+sys_fork();
+sys_execve();
 
-static void forkret(void);
-static struct proc *alloc_thread(void);
-static struct proc *proc_create(void);
+static void forkret();
+static struct proc *alloc_thread();
+static struct proc *proc_create();
 static int loadelf(struct proc *, const char *);
 
 static void
-forkret(void)
+forkret()
 {
 	return;
 }
 
 static struct proc *
-alloc_thread(void)
+alloc_thread()
 {
 	struct proc *p;
-	uintptr_t kstack;
-	uintptr_t sp;
+	u32 kstack;
+	u32 sp;
 
-	kstack = (uintptr_t)alloc_mem(KSTACK_SIZE);
+	kstack = alloc_mem(KSTACK_SIZE);
 	p = (struct proc *)(kstack + KSTACK_SIZE - sizeof(*p));
 	p->kstack = kstack;
-	sp = (uintptr_t)p;
+	sp = p;
 
 	sp -= sizeof(*p->tf);
 	p->tf = (struct trapframe *)sp;
 
-	sp -= sizeof(uint32_t);
-	*(uint32_t *)sp = (uint32_t)trapret;
+	sp -= sizeof(u32);
+	*(u32 *)sp = trapret;
 
 	sp -= sizeof(*p->context);
 	p->context = (struct context *)sp;
 	memset(p->context, 0, sizeof(*p->context));
-	p->context->eip = (uint32_t)forkret;
+	p->context->eip = (u32)forkret;
 
 	return p;
 }
 
 static struct proc *
-proc_create(void)
+proc_create()
 {
 	static unsigned int pid = 1;
 	struct proc *p = alloc_thread();
@@ -144,20 +144,20 @@ proc_create(void)
 	return p;
 }
 
-static int
+static
 loadelf(struct proc *p, const char *path)
 {
-	uintptr_t mem;
-	uint32_t *pd;
+	u32 mem;
+	u32 *pd;
 
-	uintptr_t bin;
+	u32 bin;
 	struct elfhdr *elf;
 	struct proghdr *ph;
 	int i;
-	uintptr_t start, end;
-	uintptr_t min = UINTPTR_MAX;
-	uintptr_t max = 0;
-	size_t sz;
+	u32 start, end;
+	u32 min = ~0;
+	u32 max = 0;
+	u32 sz;
 
 	for (i = ROOT_INO; i < k.ino_n; ++i)
 		if (strcmp(path, k.dir_tbl[i].name) == 0)
@@ -173,7 +173,7 @@ found:
 		return -1;
 
 	pd = copykvm();
-	ph = (struct proghdr *)(bin + elf->phoff);
+	ph = (struct proghdr *)(bin + elf->ph_off);
 	for (i = 0; i < elf->ph_n; ++i) {
 		switch (ph[i].type) {
 		case 1:
@@ -196,8 +196,8 @@ found:
 	}
 
 	sz = max - min + STACK_SIZE;
-	mem = (uintptr_t)alloc_mem(sz);
-	memset((void *)mem, 0, sz);
+	mem = alloc_mem(sz);
+	memset(mem, 0, sz);
 
 	for (i = 0; i < elf->ph_n; ++i) {
 		switch (ph[i].type) {
@@ -210,8 +210,8 @@ found:
 			continue;
 		}
 
-		memmove((void *)(mem + ph[i].vaddr % 0x1000),
-		    (void *)(bin + ph[i].off),
+		memmove((mem + ph[i].vaddr % 0x1000),
+		    (bin + ph[i].off),
 		    ph[i].filesz);
 
 		alloc_pt(pd,
@@ -226,7 +226,7 @@ found:
 	p->stack = mem - STACK_SIZE;
 	p->start = min;
 	p->end = max;
-	p->cr3 = (uintptr_t)virt2phys(pd);
+	p->cr3 = virt2phys(pd);
 	p->tf->eip = elf->entry;
 	p->tf->esp = KERNEL_OFFSET;
 
@@ -240,11 +240,11 @@ found:
 }
 
 struct proc *
-kthread_create(void (*eip)(void))
+kthread_create(void (*eip)())
 {
 	struct proc *p = alloc_thread();
 
-	p->cr3 = (uintptr_t)NULL;
+	p->cr3 = NULL;
 	p->state = READY;
 
 	p->tf->gs = (2 * 8) | 0;
@@ -253,7 +253,7 @@ kthread_create(void (*eip)(void))
 	p->tf->es = (2 * 8) | 0;
 
 	/* iret */
-	p->tf->eip = (uint32_t)eip;
+	p->tf->eip = eip;
 	p->tf->cs = (1 * 8) | 0;
 	p->tf->eflags = 0x0202;
 
@@ -261,7 +261,7 @@ kthread_create(void (*eip)(void))
 }
 
 void
-initsys(void)
+initsys()
 {
 	struct proc *p = proc_create();
 	if (p == NULL)
@@ -274,7 +274,7 @@ initsys(void)
 }
 
 void
-init_sched(void)
+init_sched()
 {
 	idle = kthread_create(scheduler);
 	curthread = idle;
@@ -291,7 +291,7 @@ enqueue(struct proc *task)
 }
 
 void
-dequeue(void)
+dequeue()
 {
 	cli();
 	curthread->state = DEAD;
@@ -299,7 +299,7 @@ dequeue(void)
 }
 
 void
-yield(void)
+yield()
 {
 	cli();
 	if (curthread->state == RUNNING)
@@ -309,7 +309,7 @@ yield(void)
 }
 
 __dead void
-scheduler(void)
+scheduler()
 {
 	struct proc *p;
 
@@ -332,7 +332,7 @@ found:
 
 		if (curthread->cr3) {
 			write_cr3(curthread->cr3);
-			tss.esp0 = (uintptr_t)curthread;
+			tss.esp0 = curthread;
 		}
 
 		switch_to(&idle->context, p->context);
@@ -343,27 +343,27 @@ found:
 
 #if 0
 int
-sys_fork(void)
+sys_fork()
 {
-	uintptr_t mem;
-	size_t sz;
+	u32 mem;
+	u32 sz;
 	struct proc *p = proc_create();
-	uint32_t *pd = copykvm();
+	u32 *pd = copykvm();
 
 	sz = curthread->end - curthread->start;
 
-	mem = (uintptr_t)alloc_pages(sz, PG_US | PG_RW | PG_P);
-	memset((void *)mem, 0, sz);
+	mem = alloc_pages(sz, PG_US | PG_RW | PG_P);
+	memset(mem, 0, sz);
 	p->start = mem;
 
 	printf("0x%x\n", mem);
 
-	memmove((void *)p->start, (void *)curthread->start, sz);
-	p->cr3 = (uintptr_t)virt2phys(pd);
+	memmove(p->start, curthread->start, sz);
+	p->cr3 = virt2phys(pd);
 	alloc_pt(pd, 0x40000000, sz, virt2phys(mem), PG_US | PG_RW | PG_P);
 
-	p->stack = (uintptr_t)alloc_pages(STACK_SIZE, PG_US | PG_RW | PG_P);
-	memmove((void *)p->stack, (void *)curthread->stack, STACK_SIZE);
+	p->stack = alloc_pages(STACK_SIZE, PG_US | PG_RW | PG_P);
+	memmove(p->stack, curthread->stack, STACK_SIZE);
 
 	alloc_pt(pd,
 	    KERNEL_OFFSET - STACK_SIZE,

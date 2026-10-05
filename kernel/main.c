@@ -27,7 +27,7 @@
 struct kinfo k;
 
 void
-test(void)
+test()
 {
 /*
  * for whatever reason, the first call

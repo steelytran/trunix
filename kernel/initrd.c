@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <sys/cdefs.h>
 #include <stdio.h>
-#include <stddef.h>
 #include <string.h>
 
 #include "trunix.h"
@@ -25,8 +25,8 @@
 
 extern struct kinfo k;
 
-static int
-oct2int(unsigned char *str, int len)
+static
+oct2int(unsigned char *str, unsigned len)
 {
 	int n = 0;
 	unsigned char *c = str;
@@ -44,11 +44,11 @@ oct2int(unsigned char *str, int len)
 }
 
 void
-load_initrd(void)
+load_initrd()
 {
-	size_t len = k.initrd_end - k.initrd_start;
+	u32 len = k.initrd_end - k.initrd_start;
 	void *tar = (void *)phys2virt(k.initrd_start);
-	uint8_t *p = tar;
+	u8 *p = tar;
 	unsigned int i = ROOT_INO;
 
 	struct inode *in = alloc_mem(0x2000);
@@ -57,7 +57,7 @@ load_initrd(void)
 	k.ino_tbl = in;
 	k.dir_tbl = dir;
 
-	for (; p < (uint8_t *)tar + len; p += 512) {
+	for (; p < (u8 *)tar + len; p += 512) {
 		if (memcmp("ustar\00000", &p[257], 8) != 0)
 			continue;
 
@@ -96,7 +96,7 @@ load_initrd(void)
 		in[i].minor = oct2int(&p[337], 7);
 
 		if (in[i].size > 0)
-			in[i].addr = (uintptr_t)&p[512];
+			in[i].addr = &p[512];
 		else
 			in[i].addr = 0;
 

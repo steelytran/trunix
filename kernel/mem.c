@@ -18,15 +18,15 @@
 
 #include <sys/queue.h>
 #include <sys/multiboot.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <sys/cdefs.h>
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "vm.h"
 #include "trunix.h"
 
-uint32_t *kpagedir;
+u32 *kpagedir;
 
 LIST_HEAD(memlist, block);
 static struct memlist freelist = LIST_HEAD_INITIALIZER(freelist);
@@ -36,15 +36,15 @@ struct block {
 	LIST_ENTRY(block) entry;
 };
 
-void munmap(void *, size_t);
 void init_mem(struct kinfo *);
-uint32_t *copykvm(void);
-void alloc_pt(uint32_t *, uint32_t, size_t, uint32_t, int);
-void *alloc_mem(size_t);
-void free_mem(void *, size_t);
+u32 *copykvm();
+void alloc_pt(u32 *, u32, u32, u32, int);
+void *alloc_mem(u32);
+void free_mem(void *, u32);
+
 
 void
-free_mem(void *addr, size_t sz)
+free_mem(void *addr, u32 sz)
 {
 	struct block *p, *n, *tmp;
 	unsigned int page_n = sz >> 12;
@@ -52,7 +52,7 @@ free_mem(void *addr, size_t sz)
 	if (addr == NULL)
 		panic();
 
-	addr = (void *)pg_rounddown((uint32_t)addr);
+	addr = (void *)pg_rounddown(addr);
 	sz = pg_roundup(sz);
 
 	memset(addr, 0x69, sz);
@@ -60,13 +60,13 @@ free_mem(void *addr, size_t sz)
 	n->sz = page_n;
 
 	LIST_FOREACH_SAFE(p, &freelist, entry, tmp) {
-		if ((uintptr_t)p + (p->sz << 12) == (uintptr_t)n) {
+		if (p + (p->sz << 12) == n) {
 			n = p;
 			n->sz += page_n;
 			continue;
 		}
 
-		if ((uintptr_t)n + (n->sz << 12) == (uintptr_t)p) {
+		if (n + (n->sz << 12) == p) {
 			LIST_REMOVE(p, entry);
 			n->sz += p->sz;
 		}
@@ -85,7 +85,7 @@ free_mem(void *addr, size_t sz)
 }
 
 void *
-alloc_mem(size_t sz)
+alloc_mem(u32 sz)
 {
 	struct block *p, *s;
 	void *addr;
@@ -98,7 +98,7 @@ alloc_mem(size_t sz)
 	if (p == NULL)
 		return NULL;
 
-	addr = (void *)p;
+	addr = p;
 	sz = pg_roundup(sz);
 
 	if (p->sz > (3 * page_n) / 2) {
@@ -138,25 +138,24 @@ init_mem(struct kinfo *k)
 		}
 	}
 
-	kpagedir = (uint32_t *)phys2virt(read_cr3());
+	kpagedir = phys2virt(read_cr3());
 	return;
 }
 
-uint32_t *
-copykvm(void)
+u32 *
+copykvm()
 {
-	uint32_t *pd = alloc_mem(0x1000);
+	u32 *pd = alloc_mem(0x1000);
 	memcpy(pd, kpagedir, 0x1000);
 	return pd;
 }
 
 void
-alloc_pt(uint32_t *pd, uint32_t v_start,
-size_t len, uint32_t frame, int flags)
+alloc_pt(u32 *pd, u32 v_start, u32 len, u32 frame, int flags)
 {
-	uint32_t *pt;
+	u32 *pt;
 	int pte, pde;
-	uint32_t v_end = v_start + len;
+	u32 v_end = v_start + len;
 
 	v_start = pg_rounddown(v_start);
 	frame = pg_rounddown(frame);
@@ -169,7 +168,7 @@ size_t len, uint32_t frame, int flags)
 			pt = alloc_mem(0x1000);
 			pd[pde] = (virt2phys(pt) & 0xFFFFF000) | flags;
 		} else {
-			pt = (uint32_t *)phys2virt(pd[pde] & 0xFFFFF000);
+			pt = phys2virt(pd[pde] & 0xFFFFF000);
 			pd[pde] |= flags;
 		}
 

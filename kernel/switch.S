@@ -20,7 +20,6 @@
 
 .text
 /*
- * void
  * switch_to(struct context **prev, struct context *next)
  */
 .globl switch_to
