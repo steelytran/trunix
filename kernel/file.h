@@ -20,7 +20,6 @@
 #define _FILE_H
 
 #include <sys/cdefs.h>
-#include <stddef.h>
 
 #define MAXMEMMAP 32
 #define DIRSIZ 128

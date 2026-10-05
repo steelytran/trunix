@@ -26,9 +26,7 @@
 extern struct kinfo k;
 
 static
-oct2int(str, len)
-unsigned char *str;
-int len;
+oct2int(unsigned char *str, unsigned len)
 {
 	int n = 0;
 	unsigned char *c = str;
@@ -45,6 +43,7 @@ int len;
 	return n;
 }
 
+void
 load_initrd()
 {
 	u32 len = k.initrd_end - k.initrd_start;

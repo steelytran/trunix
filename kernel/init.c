@@ -19,25 +19,25 @@
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
 #include <stdio.h>
+#include <stddef.h>
 
 #include "trunix.h"
 #include "vm.h"
 
 struct kinfo k;
 
-init_trunix(mb_info, magic)
-struct multiboot_info *mb_info;
-u32 magic;
+struct multiboot_info *
+init_trunix(struct multiboot_info *mb_info, u32 magic)
 {
-	unsigned long m;
+	u32 m;
 	struct multiboot_mmap_entry *mmap;
 	struct multiboot_mod_list *fs;
 
 	if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
-		return -1;
+		return NULL;
 
 	if (!(mb_info->flags >> 6 & 1))
-		return -1;
+		return NULL;
 
 	k.mbi = *mb_info;
 

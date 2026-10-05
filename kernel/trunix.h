@@ -79,35 +79,35 @@ struct kinfo {
 	struct dirent *dir_tbl;
 };
 
-panic();
-load_initrd();
-char *itoa();
+void panic();
+void load_initrd();
+char *itoa(int, unsigned);
 
-init_serial();
+void init_serial();
 u8 read_serial();
-write_serial();
-debug(const char *, ...);
+void write_serial(u8);
+void debug(const char *, ...);
 
-init_gdt();
-init_tss();
-init_idt();
+void init_gdt();
+void init_tss();
+void init_idt();
 
-read_cr4();
-read_cr2();
-read_cr1();
-read_cr0();
-read_eax();
-read_ebx();
-read_ecx();
-read_edx();
-write_cr4();
-write_cr3();
-write_cr2();
-write_cr1();
-write_cr0();
-write_eax();
-write_ebx();
-write_ecx();
-write_edx();
+u32 read_cr4();
+u32 read_cr2();
+u32 read_cr1();
+u32 read_cr0();
+u32 read_eax();
+u32 read_ebx();
+u32 read_ecx();
+u32 read_edx();
+write_cr4(u32);
+write_cr3(u32);
+write_cr2(u32);
+write_cr1(u32);
+write_cr0(u32);
+write_eax(u32);
+write_ebx(u32);
+write_ecx(u32);
+write_edx(u32);
 
 #endif

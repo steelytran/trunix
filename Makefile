@@ -25,12 +25,15 @@ TARGET = -arch i386 -target i386-unknown-none-elf
 
 LDFLAGS = -T kernel/linker.ld 
 ASFLAGS = $(INCLUDE) $(TARGET)
-CFLAGS = -fno-pic -fno-pie -fno-builtin -mno-mmx -mno-sse -mno-sse2 \
--mno-3dnow -static -fno-strict-aliasing -fno-stack-protector \
--mgeneral-regs-only -Wno-implicit-int -Wno-implicit-function-declaration \
--Wno-deprecated-non-prototype -Wno-return-type -Wno-int-conversion \
--ffreestanding -nostdlib -glldb -Wno-incompatible-function-pointer-types \
--Wno-incompatible-pointer-types -g3 -std=c89 $(INCLUDE) $(TARGET)
+CFLAGS =  -static -g3 -std=c89 -ffreestanding \
+-nostdlib -glldb $(INCLUDE) $(TARGET)
+
+CFLAGS += -fno-pic -fno-pie -fno-builtin -mno-mmx \
+-mno-sse -mno-sse2 -mno-3dnow -fno-strict-aliasing \
+-fno-stack-protector -mgeneral-regs-only
+
+CFLAGS += -Wno-int-conversion -Wno-incompatible-pointer-types \
+-Wno-incompatible-function-pointer-types \
 
 BIN = trunix
 INIT = initrd/sbin/init

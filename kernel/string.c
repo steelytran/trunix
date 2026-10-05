@@ -19,15 +19,12 @@
 #include <sys/cdefs.h>
 #include <string.h>
 
-memcmp();
-strcmp();
-u32 strlen();
-char *strncpy();
+memcmp(void *, void *, u32);
+strcmp(const char *, const char *);
+u32 strlen(char *);
+char *strncpy(char *, const char *, u32);
 
-memcmp(s1, s2, n)
-u32 *s1;
-u32 *s2;
-u32 n;
+memcmp(void *s1, void *s2, u32 n)
 {
 	u32 i;
 
@@ -44,9 +41,7 @@ u32 n;
 	return 0;
 }
 
-strcmp(s1, s2)
-char *s1;
-char *s2;
+strcmp(const char *s1, const char *s2)
 {
 	int i = 0;
 
@@ -63,8 +58,7 @@ char *s2;
 }
 
 u32
-strlen(s)
-char *s;
+strlen(char *s)
 {
 	u32 n = 0;
 
@@ -77,10 +71,7 @@ char *s;
 }
 
 char *
-strncpy(dst, src, len)
-char *dst;
-char *src;
-u32 len;
+strncpy(char *dst, const char *src, u32 len)
 {
 	u32 i;
 
@@ -94,10 +85,7 @@ u32 len;
 	return dst;
 }
 
-strncmp(s1, s2, len)
-char *s1;
-char *s2;
-u32 len;
+strncmp(const char *s1, const char *s2, u32 len)
 {
 	int i = 0;
 	unsigned char c1, c2;

@@ -21,9 +21,7 @@
 #include "trunix.h"
 
 char *
-itoa(n, base)
-int n;
-unsigned base;
+itoa(int n, unsigned base)
 {
 	int j, i = 0;
 	char c;
@@ -62,6 +60,7 @@ unsigned base;
 	return s;
 }
 
+void
 debug(const char *fmt, ...)
 {
 	char *c;

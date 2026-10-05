@@ -73,12 +73,12 @@ struct proc {
 	TAILQ_ENTRY(proc) entries;
 };
 
-switch_to();
-enqueue();
-dequeue();
-yield();
-struct proc *kthread_create();
-init_sched();
-initsys();
+void switch_to(struct context **, struct context *);
+void enqueue(struct proc *);
+void dequeue();
+void yield();
+struct proc *kthread_create(void(*)());
+void init_sched();
+void initsys();
 
 #endif

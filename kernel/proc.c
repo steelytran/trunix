@@ -20,6 +20,7 @@
 #include <sys/cdefs.h>
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "trunix.h"
 #include "proc.h"
@@ -72,23 +73,23 @@ struct pqueue queue = TAILQ_HEAD_INITIALIZER(queue);
 
 extern trapret();
 
-init_sched();
-initsys();
-enqueue();
-dequeue();
-yield();
-struct proc *kthread_create();
-__dead scheduler();
+void init_sched();
+void initsys();
+void enqueue(struct proc *);
+void dequeue();
+void yield();
+struct proc *kthread_create(void(*)());
+__dead void scheduler();
 
 sys_fork();
 sys_execve();
 
-static forkret();
+static void forkret();
 static struct proc *alloc_thread();
 static struct proc *proc_create();
-static int loadelf();
+static int loadelf(struct proc *, const char *);
 
-static
+static void
 forkret()
 {
 	return;
@@ -144,9 +145,7 @@ proc_create()
 }
 
 static
-loadelf(p, path)
-struct proc *p;
-const char *path;
+loadelf(struct proc *p, const char *path)
 {
 	u32 mem;
 	u32 *pd;
@@ -241,8 +240,7 @@ found:
 }
 
 struct proc *
-kthread_create(eip)
-int(*eip)();
+kthread_create(void (*eip)())
 {
 	struct proc *p = alloc_thread();
 
@@ -262,6 +260,7 @@ int(*eip)();
 	return p;
 }
 
+void
 initsys()
 {
 	struct proc *p = proc_create();
@@ -274,6 +273,7 @@ initsys()
 	enqueue(p);
 }
 
+void
 init_sched()
 {
 	idle = kthread_create(scheduler);
@@ -284,12 +284,13 @@ init_sched()
 	scheduler();
 }
 
-enqueue(task)
-struct proc *task;
+void
+enqueue(struct proc *task)
 {
 	TAILQ_INSERT_TAIL(&queue, task, entries);
 }
 
+void
 dequeue()
 {
 	cli();
@@ -297,6 +298,7 @@ dequeue()
 	yield();
 }
 
+void
 yield()
 {
 	cli();
@@ -306,6 +308,7 @@ yield()
 	switch_to(&curthread->context, idle->context);
 }
 
+__dead void
 scheduler()
 {
 	struct proc *p;

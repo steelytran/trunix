@@ -26,25 +26,24 @@
 static u32 pd[1024] __attribute__((aligned(0x1000)));
 static u32 *pagedir = pd;
 
-pg_clear();
-pg_identity();
-pg_clear_identity();
-pg_enable();
-pg_map();
-pg_free();
+extern u32 vm_enable_paging(u32 *);
 
-add_memmap();
-cut_memmap();
+void pg_clear();
+void pg_identity();
+void pg_clear_identity();
+void pg_enable();
 
-u32 pg_roundup();
-u32 pg_rounddown();
+void add_memmap(struct kinfo *, u64, u64);
+void cut_memmap(struct kinfo *, u32, u32);
+
+u32 pg_roundup(u32);
+u32 pg_rounddown(u32);
 
 /*
  * round value up to page boundaries.
  */
 u32
-pg_roundup(x)
-u32 x;
+pg_roundup(u32 x)
 {
 	u32 p = x % 0x1000;
 
@@ -58,8 +57,7 @@ u32 x;
  * round value down to page boundaries.
  */
 u32
-pg_rounddown(x)
-u32 x;
+pg_rounddown(u32 x)
 {
 	u32 p = x % 0x1000;
 
@@ -72,10 +70,8 @@ u32 x;
 /*
  * add memory map entry 
  */
-add_memmap(k, addr, len)
-struct kinfo *k;
-u64 addr;
-u64 len;
+void 
+add_memmap(struct kinfo *k, u64 addr, u64 len)
 {
 	int m;
 	u32 highmark;
@@ -106,10 +102,8 @@ u64 len;
 	panic(); /* no available memmap slot */
 }
 
-cut_memmap(k, start, end)
-struct kinfo *k;
-u32 start;
-u32 end;
+void
+cut_memmap(struct kinfo *k, u32 start, u32 end)
 {
 	int m;
 	u32 cut_start, cut_end;
@@ -141,6 +135,7 @@ u32 end;
 	}
 }
 
+void
 pg_clear()
 {
 	memsetl(pagedir, 0, 1024);
@@ -150,6 +145,7 @@ pg_clear()
  * identity map from the start of
  * memory to the end of the kernel.
  */
+void
 pg_identity()
 {
 	u32 i;
@@ -164,6 +160,7 @@ pg_identity()
 	}
 }
 
+void
 pg_clear_identity()
 {
 	u32 i;
@@ -179,6 +176,7 @@ pg_clear_identity()
 	}
 }
 
+void
 pg_enable()
 {
 	vm_enable_paging(pagedir);

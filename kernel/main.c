@@ -26,6 +26,7 @@
 
 struct kinfo k;
 
+void
 test()
 {
 /*
@@ -42,8 +43,8 @@ test()
 /*
  * kernel main
  */
-kmain(kernel_info)
-struct kinfo *kernel_info;
+void
+kmain(struct kinfo *kernel_info)
 {
 	init_gdt();
 	init_tss();

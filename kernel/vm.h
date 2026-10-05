@@ -48,26 +48,24 @@ extern char _kernel_virt_base[];
 extern char _kernel_size[];
 extern char _kernel_offset[];
 
-u32 pg_roundup();
-u32 pg_rounddown();
-add_memmap();
-cut_memmap();
+void add_memmap(struct kinfo *, u64, u64);
+void cut_memmap(struct kinfo *, u32, u32);
 
-pg_clear();
-pg_identity();
-pg_clear_identity();
-pg_enable();
-pg_map();
-pg_free();
+u32 pg_roundup(u32);
+u32 pg_rounddown(u32);
+
+void pg_clear();
+void pg_identity();
+void pg_clear_identity();
+void pg_enable();
 
 flush_tlb();
-u32 vm_enable_paging();
 
-alloc_mem();
-free_mem();
-init_mem();
-alloc_pt();
+void *alloc_mem(u32);
+void free_mem(void *, u32);
+void init_mem(struct kinfo *k);
+void alloc_pt(u32 *, u32, u32, u32, int);
 
-copykvm();
+u32 *copykvm();
 
 #endif

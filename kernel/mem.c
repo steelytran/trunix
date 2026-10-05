@@ -19,9 +19,9 @@
 #include <sys/queue.h>
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "vm.h"
 #include "trunix.h"
@@ -36,17 +36,15 @@ struct block {
 	LIST_ENTRY(block) entry;
 };
 
-munmap();
-init_mem();
-copykvm();
-alloc_pt();
-alloc_mem();
-free_mem();
+void init_mem(struct kinfo *);
+u32 *copykvm();
+void alloc_pt(u32 *, u32, u32, u32, int);
+void *alloc_mem(u32);
+void free_mem(void *, u32);
 
 
-free_mem(addr, sz)
-u32 *addr;
-u32 sz;
+void
+free_mem(void *addr, u32 sz)
 {
 	struct block *p, *n, *tmp;
 	unsigned int page_n = sz >> 12;
@@ -54,7 +52,7 @@ u32 sz;
 	if (addr == NULL)
 		panic();
 
-	addr = pg_rounddown(addr);
+	addr = (void *)pg_rounddown(addr);
 	sz = pg_roundup(sz);
 
 	memset(addr, 0x69, sz);
@@ -62,13 +60,13 @@ u32 sz;
 	n->sz = page_n;
 
 	LIST_FOREACH_SAFE(p, &freelist, entry, tmp) {
-		if (n) {
+		if (p + (p->sz << 12) == n) {
 			n = p;
 			n->sz += page_n;
 			continue;
 		}
 
-		if (p) {
+		if (n + (n->sz << 12) == p) {
 			LIST_REMOVE(p, entry);
 			n->sz += p->sz;
 		}
@@ -86,11 +84,11 @@ u32 sz;
 	}
 }
 
-alloc_mem(sz)
-u32 sz;
+void *
+alloc_mem(u32 sz)
 {
 	struct block *p, *s;
-	u32 *addr;
+	void *addr;
 	unsigned int page_n = sz >> 12;
 
 	LIST_FOREACH(p, &freelist, entry)
@@ -114,8 +112,8 @@ u32 sz;
 	return addr;
 }
 
-init_mem(k)
-struct kinfo *k;
+void
+init_mem(struct kinfo *k)
 {
 	int m = 0;
 	struct block *p, *n, *tmp;
@@ -144,6 +142,7 @@ struct kinfo *k;
 	return;
 }
 
+u32 *
 copykvm()
 {
 	u32 *pd = alloc_mem(0x1000);
@@ -151,12 +150,8 @@ copykvm()
 	return pd;
 }
 
-alloc_pt(pd, v_start, len, frame, flags)
-u32 *pd;
-u32 v_start;
-u32 len;
-u32 frame;
-int flags;
+void
+alloc_pt(u32 *pd, u32 v_start, u32 len, u32 frame, int flags)
 {
 	u32 *pt;
 	int pte, pde;
