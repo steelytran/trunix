@@ -1,5 +1,5 @@
 /*
- * kernel utilities
+ * assertations
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,39 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
-#include "trunix.h"
+#ifndef _ASSERT_H
+#define _ASSERT_H
 
-__dead void
-abort()
-{
-	for (;;) {
-		cli();
-		hlt();
-	}
-}
+#include <sys/cdefs.h>
 
-__dead void
-panic(const char *msg)
-{
-	char *c;
+#ifdef NDEBUG
+#define assert(x) (void)(0)
+#else
+#define assert(x) ((x) ? (void)0 : __assert_fail(#x, __FILE__, __LINE__, __func__))
+#endif
 
-	for (c = "PANIC: "; *c != '\0'; ++c)
-		write_serial(*c);
 
-	for (c = msg; *c != '\0'; ++c)
-		write_serial(*c);
+__dead void __assert_fail (const char *, const char *, int, const char *);
 
-	write_serial('\n');
+#endif
 
-	abort();
-}
-
-__dead void
-__assert_fail(const char *expr, const char *file, int line, const char *func)
-{
-	printk("Assertation failed: %s (%s: %s: %d)\n",
-	    expr, file, func, line);
-
-	abort();
-}

@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include <stddef.h>
+#include <assert.h>
 
 #include "trunix.h"
 #include "proc.h"
@@ -25,18 +26,6 @@
 #include "kbd.h"
 
 struct kinfo k;
-
-void
-test()
-{
-/*
- * only calls one of the prints?
- */
-	printk("asdfasdfasdfasdf\n");
-	printk("asdfasdfasdfasdf\n");
-	printk("asdfasdfasdfasdf\n");
-	for (;;);
-}
 
 /*
  * kernel main
@@ -58,7 +47,6 @@ kmain(struct kinfo *kernel_info)
 
 	load_initrd();
 
-	enqueue(kthread_create(test));
 	init_pmm();
 	initsys();
 	init_sched();

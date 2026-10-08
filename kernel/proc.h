@@ -25,6 +25,8 @@
 #include "file.h"
 #include "vm.h"
 
+#define NOKTHREAD
+
 #define MAXFILES 16
 
 struct trapframe {
@@ -80,9 +82,12 @@ void switch_to(struct context **, struct context *);
 void enqueue(struct proc *);
 void dequeue();
 void yield();
-struct proc *kthread_create(void(*)());
 void init_pmm();
 void init_sched();
 void initsys();
+
+#ifndef NOKTHREAD
+struct proc *kthread_create(void(*)());
+#endif
 
 #endif

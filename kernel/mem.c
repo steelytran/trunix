@@ -21,6 +21,7 @@
 #include <sys/cdefs.h>
 #include <string.h>
 #include <stddef.h>
+#include <assert.h>
 
 #include "vm.h"
 #include "trunix.h"
@@ -81,8 +82,7 @@ free_pages(void *addr, u32 sz)
 {
 	struct block *p, *n, *tmp;
 
-	if (addr == NULL)
-		panic("tried to free NULL");
+	assert(addr != NULL);
 
 	addr = (void *)pg_rounddown(addr);
 	sz = pg_roundup(sz);
@@ -112,8 +112,7 @@ kmalloc(u32 sz)
 	sz += sizeof(*hdr);
 	sz = roundup(sz, 8);
 
-	if (sz >= 0x1000)
-		panic("allocating > page size through kmalloc");
+	assert(sz < 0x1000);
 
 	SLIST_FOREACH(p, &heap, entry)
 		if (p->sz >= sz)

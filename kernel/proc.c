@@ -20,6 +20,7 @@
 #include <sys/cdefs.h>
 #include <string.h>
 #include <stddef.h>
+#include <assert.h>
 
 #include "trunix.h"
 #include "proc.h"
@@ -93,8 +94,12 @@ void initsys();
 void enqueue(struct proc *);
 void dequeue();
 void yield();
-struct proc *kthread_create(void(*)());
 __dead void scheduler();
+
+#ifdef NOKTHREAD
+static
+#endif
+struct proc *kthread_create(void(*)());
 
 int sys_fork();
 int sys_execve(const char *, const char **, const char **);
@@ -273,6 +278,9 @@ found:
 	return 0;
 }
 
+#ifdef NOKTHREAD
+static
+#endif
 struct proc *
 kthread_create(void (*eip)())
 {
@@ -300,8 +308,7 @@ init_pmm()
 	int i;
 
 	memtab = alloc_pages(NULL, sizeof(struct proc_mmap) * 128);
-	if (memtab == NULL)
-		panic("could not allocate process memory manager");
+	assert(memtab != NULL);
 
 	for (i = 0; i < 128; ++i)
 		SLIST_INIT(&memtab[i]);
@@ -314,11 +321,9 @@ initsys()
 	struct proc *p = proc_create();
 	p->pid = pid++;
 
-	if (p == NULL)
-		panic("could not allocate proc struct for init");
+	assert(p != NULL);
 
-	if (loadelf(p, "/sbin/init") < 0)
-		panic("could not load init elf binary");
+	assert(loadelf(p, "/sbin/init") >= 0);
 
 	enqueue(p);
 }

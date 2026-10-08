@@ -97,7 +97,7 @@ INT_0x0A:
 	call printk
 	addl $4, %esp
 
-	pushl $inv_op_msg
+	pushl $inv_tss_msg
 	call printk
 
 1:	cli
