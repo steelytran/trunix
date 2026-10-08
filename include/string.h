@@ -19,23 +19,20 @@
 #ifndef _STRING_H
 #define _STRING_H
 
-#include <stddef.h>
+#include <sys/cdefs.h>
 
-void *memcpy(void *restrict dst, const void *restrict src, size_t n);
-void *memcpyl(void *restrict dst, const void *restrict src, size_t n);
-void *memcpyw(void *restrict dst, const void *restrict src, size_t n);
-void *memset(void *b, int c, size_t len);
-void *memsetw(void *b, int c, size_t len);
-void *memsetl(void *b, int c, size_t len);
-void *memmove(void *, const void *, size_t);
+u32 *memcpy();
+u32 *memcpyl();
+u32 *memcpyw();
+u32 *memset();
+u32 *memsetw();
+u32 *memsetl();
+u32 *memmove();
 
-int memcmp(const void *, const void *, size_t);
-
-int strcmp(const char *, const char *);
-int strncmp(const char *, const char *, size_t);
-
-size_t strlen(const char *);
-
-char *strncpy(char *, const char *, size_t);
+memcmp();
+strcmp();
+u32 strlen();
+char *strncpy();
+char *strlcpy();
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * standard input / output
+ * virtual file system
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,23 +16,46 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _STDIO_H
-#define _STDIO_H
+#ifndef _FILE_H
+#define _FILE_H
 
-#include <stdarg.h>
+#include <sys/cdefs.h>
 
-#define stdin ((struct __FILE *)__stdin)
-#define stdout ((struct __FILE *)__stdout)
-#define stderr ((struct __FILE *)__stderr)
+#define DIRSIZ 128
+#define ROOT_INO 2
 
-typedef struct __FILE {
-	char *_ptr;
-	char *_buf_base;
-	char *_buf_end;
-	short _fd;
-} FILE;
+enum major_ids { 
+	CONSOLE
+};
 
-void putchar(char);
-int printf(const char *, ...);
+struct dirent {
+	u32 inode;
+	char name[DIRSIZ];
+};
+
+struct file_operations {
+	int (*open)(struct inode *, struct file *);
+	int (*close)(struct inode *, struct file *);
+	int (*read)(struct file *, char *, u32, u32 *);
+	int (*write)(struct file *, const char *, u32, u32 *);
+};
+
+struct file {
+	struct file_operations *ops;
+	struct inode *inode;
+};
+
+struct inode {
+	short uid;
+	short gid;
+	u16 mode;
+	u16 nlink;
+	u16 major, minor;
+	enum {V_FILE, V_LINK, V_CHAR, V_BLK, V_DIR, V_FIFO} type;
+	u32 size;
+	u32 id;
+	u32 addr;
+	long m_time;
+};
 
 #endif

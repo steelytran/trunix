@@ -53,10 +53,3 @@
 	ARG_LONG_SET write_ebx, %ebx
 	ARG_LONG_SET write_ecx, %ecx
 	ARG_LONG_SET write_edx, %edx
-
-.globl panic
-panic:
-1:
-	cli
-	hlt
-	jmp 1b

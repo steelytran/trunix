@@ -1,5 +1,5 @@
 /*
- * formatted print
+ * serial logging
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,13 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/tty.h>
 #include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
+
+#include "trunix.h"
+
+void printk(const char *, ...);
+void vprintk(const char *, va_list);
 
 char *
-itoa(int n, unsigned int base)
+itoa(int n, unsigned base)
 {
 	int j, i = 0;
 	char c;
@@ -61,14 +63,22 @@ itoa(int n, unsigned int base)
 	return s;
 }
 
-int
-printf(const char *fmt, ...)
+void
+printk(const char *fmt, ...)
 {
-	char *c;
 	va_list args;
-	int base;
 
 	va_start(args, fmt);
+	vprintk(fmt, args);
+	va_end(args);
+}
+
+
+void
+vprintk(const char *fmt, va_list args)
+{
+	char *c;
+	int base;
 
 	for (; *fmt != '\0'; ++fmt) {
 		if (*fmt == '%') {
@@ -76,11 +86,14 @@ printf(const char *fmt, ...)
 			if (*fmt == '\0')
 				break;
 			if (*fmt == '%') {
-				putchar(*fmt);
+				write_serial(*fmt);
 				continue;
 			} if (*fmt == 's') {
 				c = va_arg(args, char *);
 				goto flush;
+			} if (*fmt == 'c') {
+				write_serial(va_arg(args, char));
+				continue;
 			}
 
 			switch (*fmt) {
@@ -103,13 +116,10 @@ printf(const char *fmt, ...)
 
 flush:
 			while (*c != '\0')
-				putchar(*c++);
+				write_serial(*c++);
 
 			continue;
 		}
-		putchar(*fmt);
+		write_serial(*fmt);
 	}
-
-	va_end(args);
-	return 0;
 }

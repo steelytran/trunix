@@ -16,18 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <sys/cdefs.h>
 #include <string.h>
-#include <stddef.h>
 
-int memcmp(const void *, const void *, size_t);
+int memcmp(void *, void *, u32);
 int strcmp(const char *, const char *);
-size_t strlen(const char *);
-char *strncpy(char *, const char *, size_t);
+u32 strlen(char *);
+char *strncpy(char *, const char *, u32);
+int strncmp(const char *, const char *, u32);
 
 int
-memcmp(const void *s1, const void *s2, size_t n)
+memcmp(void *s1, void *s2, u32 n)
 {
-	size_t i;
+	u32 i;
 
 	unsigned char *str1 = (unsigned char *)s1;
 	unsigned char *str2 = (unsigned char *)s2;
@@ -59,23 +60,21 @@ strcmp(const char *s1, const char *s2)
 	return s1[i] - s2[i];
 }
 
-size_t
-strlen(const char *s)
+u32
+strlen(char *s)
 {
-	size_t n = 0;
+	u32 n = 0;
 
-	while(*s) {
-		++s;
+	for(; *s != '\0'; ++s)
 		++n;
-	}
 
 	return n;
 }
 
 char *
-strncpy(char *dst, const char *src, size_t len)
+strncpy(char *dst, const char *src, u32 len)
 {
-	size_t i;
+	u32 i;
 
 	for (i = 0; i < len; ++i) {
 		if (src[i] == '\0')
@@ -87,31 +86,22 @@ strncpy(char *dst, const char *src, size_t len)
 	return dst;
 }
 
-/*
-int
-strncmp(const char *s1, const char *s2, size_t len)
+char *
+strlcpy(char *dst, const char *src, u32 len)
 {
-	int i = 0;
+	u32 i;
 
-	while (s1[i] != '\0' && s2[i] != '\0') {
-		if (i >= len)
-			return s1[i] - s2[i];
-
-		if (s1[i] == s2[i]) {
-			++i;
-			continue;
-		}
-
-		return s1[i] - s2[i];
+	for (i = 0; i < len; ++i) {
+		dst[i] = src[i];
+		if (src[i] == '\0')
+			break;
 	}
 
-	return 0;
-
+	return len;
 }
-*/
 
 int
-strncmp(const char *s1, const char *s2, size_t len)
+strncmp(const char *s1, const char *s2, u32 len)
 {
 	int i = 0;
 	unsigned char c1, c2;

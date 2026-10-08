@@ -1,5 +1,5 @@
 /*
- * teletype
+ * kernel utilities
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,17 +16,24 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _SYS_TTY_H
-#define _SYS_TTY_H
+#include "trunix.h"
 
-#include <stdint.h>
+__dead void
+panic(const char *msg)
+{
+	char *c;
 
-struct tty {
-	uint16_t buf[128];
-	int pos;
-};
+	for (c = "PANIC: "; *c != '\0'; ++c)
+		write_serial(*c);
 
-void movecursor(unsigned int);
-void cls(void);
+	for (c = msg; *c != '\0'; ++c)
+		write_serial(*c);
 
-#endif
+	write_serial('\n');
+
+	for (;;) {
+		cli();
+		hlt();
+	}
+}
+

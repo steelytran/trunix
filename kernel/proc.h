@@ -16,71 +16,73 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _SYS_PROC_H
-#define _SYS_PROC_H
+#ifndef _PROC_H
+#define _PROC_H
 
 #include <sys/queue.h>
 #include <sys/cdefs.h>
-#include <stddef.h>
-#include <stdint.h>
 
-enum procstate {RUNNING, READY, SLEEPING, BLOCKED, DEAD};
+#include "file.h"
+#include "vm.h"
+
+#define MAXFILES 16
 
 struct trapframe {
 /* in order of pushal instruction */
-	uint32_t edi;
-	uint32_t esi;
-	uint32_t ebp;
-	uint32_t __esp; /* unused */
-	uint32_t ebx;
-	uint32_t edx;
-	uint32_t ecx;
-	uint32_t eax;
+	u32 edi;
+	u32 esi;
+	u32 ebp;
+	u32 __esp; /* unused */
+	u32 ebx;
+	u32 edx;
+	u32 ecx;
+	u32 eax;
 
-	uint32_t gs;
-	uint32_t fs;
-	uint32_t es;
-	uint32_t ds;
+	u32 gs;
+	u32 fs;
+	u32 es;
+	u32 ds;
 
 /* iret stack frame */
-	uint32_t eip;
-	uint32_t cs;
-	uint32_t eflags;
- /* unused by cpl 0 -> 0 switch */
-	uint32_t esp;
-	uint32_t ss;
+	u32 eip;
+	u32 cs;
+	u32 eflags;
+/* unused by kernel thread switching */
+	u32 esp;
+	u32 ss;
 };
 
 struct context {
-	uint32_t edi;
-	uint32_t esi;
-	uint32_t ebp;
-	uint32_t ebx;
-	uint32_t eip;
+	u32 edi;
+	u32 esi;
+	u32 ebp;
+	u32 ebx;
+	u32 eip;
 };
 
 struct proc {
 	int pid;
-	uint32_t cr3;
-	uintptr_t kstack;
-	uintptr_t stack;
-	uintptr_t start;
-	uintptr_t end;
+	u32 cr3;
+	u32 kstack;
 
 	struct context *context;
 	struct trapframe *tf;
 
-	enum procstate state;
+	struct file *ofile[MAXFILES];
+
+	enum {RUNNING, READY, SLEEPING, BLOCKED, DEAD} state;
+
 	struct proc *parent;
 	TAILQ_ENTRY(proc) entries;
 };
 
 void switch_to(struct context **, struct context *);
 void enqueue(struct proc *);
-void dequeue(void);
-void yield(void);
-struct proc *kthread_create(void (*)(void));
-void init_sched(void);
-void initsys(void);
+void dequeue();
+void yield();
+struct proc *kthread_create(void(*)());
+void init_pmm();
+void init_sched();
+void initsys();
 
 #endif

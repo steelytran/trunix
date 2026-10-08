@@ -16,16 +16,31 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/trunix.h>
-#include <sys/tty.h>
-#include <sys/proc.h>
-#include <sys/mman.h>
-#include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 
+#include "trunix.h"
+#include "proc.h"
+#include "vm.h"
 #include "kbd.h"
 
 struct kinfo k;
+
+#if 0
+void
+test()
+{
+/*
+ * for whatever reason, the first call
+ * is skipped and instead switches
+ * immediately, the rest are fine?
+ */
+	printk("asdfasdfasdfasdf\n");
+	printk("asdfasdfasdfasdf\n");
+	printk("asdfasdfasdfasdf\n");
+	for (;;);
+}
+#endif
 
 /*
  * kernel main
@@ -33,17 +48,22 @@ struct kinfo k;
 void
 kmain(struct kinfo *kernel_info)
 {
+	u16 *p;
 	init_gdt();
 	init_tss();
 	init_idt();
+
+	init_serial();
 
 	memcpy(&k, kernel_info, sizeof(struct kinfo));
 
 	pg_clear_identity();
 	init_mem(&k);
-	init_serial();
+
 	load_initrd();
 
+	init_pmm();
 	initsys();
+	/* enqueue(kthread_create(test)); */
 	init_sched();
 }

@@ -14,33 +14,58 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-CC := clang
-AS := clang
-LD := ld.lld
-OBJCOPY := llvm-objcopy
-GRUB := i686-elf-grub
+CC = clang
+AS = clang
+LD = ld.lld
+OBJCOPY = llvm-objcopy
+GRUB = i686-elf-grub
 
-INCLUDE := -isystem include
-TARGET := -arch i386 -target i386-unknown-none-elf
+INCLUDE = -isystem include
+TARGET = -arch i386 -target i386-unknown-none-elf
 
-LDFLAGS := -T kernel/linker.ld 
-ASFLAGS := $(INCLUDE) $(TARGET)
-CFLAGS := -fno-pic -fno-pie -fno-builtin -mno-mmx -mno-sse \
--fno-stack-protector -mgeneral-regs-only -mno-sse2 -mno-3dnow \
--static -fno-strict-aliasing -ffreestanding -nostdlib -Wall \
--Wextra -Wpedantic -glldb -g3 -std=c99 $(INCLUDE) $(TARGET)
+LDFLAGS = -T kernel/linker.ld 
+ASFLAGS = $(INCLUDE) $(TARGET)
+CFLAGS =  -static -std=c99 -ffreestanding \
+-nostdlib -g3 -glldb $(INCLUDE) $(TARGET)
 
-BIN := trunix
-INIT := initrd/sbin/init
+CFLAGS += -fno-pic -fno-pie -fno-builtin -mno-mmx \
+-mno-sse -mno-sse2 -mno-3dnow -fno-strict-aliasing \
+-fno-stack-protector -mgeneral-regs-only
 
-UNPAGED_OBJS = head.S.o trunix_init.c.o paging.c.o pg_utils.S.o util.S.o string.S.o
+CFLAGS += -Wno-int-conversion -Wno-pointer-integer-compare
+
+BIN = trunix
+INIT = initrd/sbin/init
+TEST = initrd/bin/test
+
+UNPAGED_OBJS = \
+head.S.o \
+init.c.o \
+paging.c.o \
+pg_utils.S.o \
+util.S.o \
+string.S.o \
+com.S.o \
+serial.c.o \
+util.c.o \
 
 K_OBJS = \
 $(addprefix unpaged_,$(UNPAGED_OBJS)) \
-string.S.o printf.c.o main.c.o interrupt.S.o \
-gate.S.o paging.c.o pg_utils.S.o tty.S.o util.S.o \
-mem.c.o proc.c.o switch.S.o string.c.o switch.S.o \
-com.S.o initrd.c.o
+main.c.o \
+gate.S.o \
+interrupt.S.o \
+paging.c.o \
+pg_utils.S.o \
+mem.c.o \
+string.S.o \
+util.S.o \
+util.c.o \
+com.S.o \
+serial.c.o \
+initrd.c.o \
+string.c.o \
+proc.c.o \
+switch.S.o \
 
 OBJS = $(addprefix kernel/,$(K_OBJS))
 
@@ -63,7 +88,11 @@ $(INIT): sbin/init.S
 	$(AS) $(TARGET) -static -c $< -o $<.o
 	$(LD) $<.o -o $@
 
-iso: $(BIN) $(INIT)
+$(TEST): bin/test.S
+	$(AS) $(TARGET) -static -c $< -o $<.o
+	$(LD) $<.o -o $@
+
+iso: $(BIN) $(INIT) $(TEST)
 	mkdir -p iso/boot/grub
 	cp $< iso/boot/$<
 	tar --numeric-owner -czvf iso/boot/initrd -C initrd .
@@ -74,6 +103,7 @@ qemu: iso
 	qemu-system-i386 \
 	-cdrom trunix.iso \
 	-display cocoa,zoom-to-fit=on \
+	-serial mon:stdio \
 	-no-reboot -no-shutdown
 
 qemu-gdb: iso
@@ -82,6 +112,7 @@ qemu-gdb: iso
 	-cdrom trunix.iso \
 	-display cocoa,zoom-to-fit=on \
 	-no-reboot -no-shutdown \
+	-serial file:log \
 	-s -S & \
 	lldb trunix -o "gdb-remote 1234"'
 

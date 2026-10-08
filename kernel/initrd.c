@@ -16,16 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/trunix.h>
-#include <sys/mman.h>
-#include <stdio.h>
-#include <stddef.h>
+#include <sys/cdefs.h>
 #include <string.h>
+#include <stddef.h>
+
+#include "trunix.h"
+#include "vm.h"
 
 extern struct kinfo k;
 
 static int
-oct2int(unsigned char *str, int len)
+oct2int(unsigned char *str, unsigned len)
 {
 	int n = 0;
 	unsigned char *c = str;
@@ -43,30 +44,25 @@ oct2int(unsigned char *str, int len)
 }
 
 void
-load_initrd(void)
+load_initrd()
 {
-	size_t len = k.initrd_end - k.initrd_start;
+	u32 len = k.initrd_end - k.initrd_start;
+	void *tar = (void *)p2v(k.initrd_start);
+	u8 *p = tar;
+	unsigned int i = ROOT_INO;
 
-	unsigned int i = 2;
-	void *tar = mmap((void *)k.initrd_start,
-	    len,
-	    PG_RW | PG_P
-	);
-
-	uint8_t *p = tar;
-
-	struct inode *in = mmap(NULL, 0x2000, PG_RW | PG_P);
-	struct dirent *dir = mmap(NULL, 0x2000, PG_RW | PG_P);
+	struct inode *in = alloc_pages(NULL, 0x2000);
+	struct dirent *dir = alloc_pages(NULL, 0x2000);
 
 	k.ino_tbl = in;
 	k.dir_tbl = dir;
 
-	for (; p < (uint8_t *)tar + len; p += 512) {
+	for (; p < (u8 *)tar + len; p += 512) {
 		if (memcmp("ustar\00000", &p[257], 8) != 0)
 			continue;
 
-		dir[i].ino_id = i;
-		strncpy(dir[i].name, &p[1], DIRSIZ);
+		dir[i].inode = i;
+		strlcpy(dir[i].name, &p[1], DIRSIZ);
 
 		in[i].mode = oct2int(&p[100], 6);
 		in[i].uid = oct2int(&p[108], 6);
@@ -77,22 +73,22 @@ load_initrd(void)
 		switch (p[156]) {
 		case '0': /* FALLTHROUGH */
 		case '1':
-			in[i].type = VFILE;
+			in[i].type = V_FILE;
 			break;
 		case '2':
-			in[i].type = VLINK;
+			in[i].type = V_LINK;
 			break;
 		case '3':
-			in[i].type = VCHAR;
+			in[i].type = V_CHAR;
 			break;
 		case '4':
-			in[i].type = VBLK;
+			in[i].type = V_BLK;
 			break;
 		case '5':
-			in[i].type = VDIR;
+			in[i].type = V_DIR;
 			break;
 		case '6':
-			in[i].type = VFIFO;
+			in[i].type = V_FIFO;
 			break;
 		}
 
@@ -100,7 +96,7 @@ load_initrd(void)
 		in[i].minor = oct2int(&p[337], 7);
 
 		if (in[i].size > 0)
-			in[i].addr = (uintptr_t)&p[512];
+			in[i].addr = &p[512];
 		else
 			in[i].addr = 0;
 

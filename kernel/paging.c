@@ -16,92 +16,33 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/trunix.h>
-#include <sys/mman.h>
-#include <stdint.h>
+#include <sys/cdefs.h>
 #include <string.h>
-#include <stdio.h>
 
-extern uint32_t _kernel_physical_base;
-extern uint32_t _kernel_unpaged_end;
-extern uint32_t _kernel_virt_base;
-extern uint32_t _kernel_size;
+#include "trunix.h"
+#include "vm.h"
 
-uint32_t kernel_physical_start = (uint32_t)&_kernel_physical_base;
-uint32_t kernel_physical_end = (uint32_t)&_kernel_unpaged_end;
-uint32_t kernel_virt_start = (uint32_t)&_kernel_virt_base;
-uint32_t kernel_len = (uint32_t)&_kernel_size;
+static u32 pd[1024] __aligned(0x1000);
+static u32 *pagedir = pd;
 
-static uint32_t pagedir[1024] __attribute__((aligned(0x1000)));
-uint32_t* virtpagedir;
+extern u32 vm_enable_paging(u32 *);
 
-void pg_clear(void);
-void pg_identity(void);
-void pg_clear_identity(void);
-void pg_enable(void);
-void pg_map(uint32_t, uint32_t, uint32_t, int);
-void pg_free(uint32_t, uint32_t);
+void pg_clear();
+void pg_identity();
+void pg_clear_identity();
+void pg_enable();
 
-static uint32_t *pt_alloc(uint32_t *);
-
-void add_memmap(struct kinfo *, uint64_t, uint64_t);
-void cut_memmap(struct kinfo *, uintptr_t, uintptr_t);
-
-uint32_t pg_roundup(uint32_t);
-uint32_t pg_rounddown(uint32_t);
-
-static uint32_t *
-pt_alloc(uint32_t *p)
-{
-	uint32_t *t;
-	static uint32_t pagetable[6][1024] __attribute__((aligned(0x1000)));
-	static int used_pt_n = 0;
-
-	if (used_pt_n >= 6)
-		panic();
-
-	t = pagetable[used_pt_n++];
-	*p = virt2phys(t);
-
-	return t;
-}
-
-/*
- * round value up to page boundaries.
- */
-uint32_t
-pg_roundup(uint32_t x)
-{
-	uint32_t p = x % 0x1000;
-
-	if (p == 0)
-		return x;
-
-	return x + 0x1000 - p;
-}
-
-/*
- * round value down to page boundaries.
- */
-uint32_t
-pg_rounddown(uint32_t x)
-{
-	uint32_t p = x % 0x1000;
-
-	if (p == 0)
-		return x;
-
-	return x - p;
-}
+void add_memmap(struct kinfo *, u64, u64);
+void cut_memmap(struct kinfo *, u32, u32);
 
 /*
  * add memory map entry 
  */
-void
-add_memmap(struct kinfo *k, uint64_t addr, uint64_t len)
+void 
+add_memmap(struct kinfo *k, u64 addr, u64 len)
 {
 	int m;
-	uint32_t highmark;
+	u32 highmark;
 	if (len == 0)
 		return;
 
@@ -112,8 +53,8 @@ add_memmap(struct kinfo *k, uint64_t addr, uint64_t len)
 		if (k->memmap[m].len)
 			continue;
 
-		memcpy(&k->memmap[m].addr, &addr, sizeof(uint64_t));
-		memcpy(&k->memmap[m].len, &len, sizeof(uint64_t));
+		memcpy(&k->memmap[m].addr, &addr, sizeof(u64));
+		memcpy(&k->memmap[m].len, &len, sizeof(u64));
 		k->memmap[m].type = MULTIBOOT_MEMORY_AVAILABLE;
 
 		if (m >= k->mmap_n)
@@ -126,15 +67,15 @@ add_memmap(struct kinfo *k, uint64_t addr, uint64_t len)
 		return;
 	}
 
-	panic(); /* no available memmap slot */
+	panic("no available memmap slot");
 }
 
 void
-cut_memmap(struct kinfo *k, uintptr_t start, uintptr_t end)
+cut_memmap(struct kinfo *k, u32 start, u32 end)
 {
 	int m;
-	uintptr_t cut_start, cut_end;
-	uintptr_t mme_start, mme_end;
+	u32 cut_start, cut_end;
+	u32 mme_start, mme_end;
 
 	start = pg_rounddown(start);
 	end = pg_roundup(end);
@@ -143,8 +84,8 @@ cut_memmap(struct kinfo *k, uintptr_t start, uintptr_t end)
 		cut_start = start;
 		cut_end = end;
 
-		mme_start = (uintptr_t)k->memmap[m].addr;
-		mme_end = (uintptr_t)(k->memmap[m].addr + k->memmap[m].len);
+		mme_start = k->memmap[m].addr;
+		mme_end = (k->memmap[m].addr + k->memmap[m].len);
 
 		if (cut_start < mme_start)
 			cut_start = mme_start;
@@ -163,10 +104,9 @@ cut_memmap(struct kinfo *k, uintptr_t start, uintptr_t end)
 }
 
 void
-pg_clear(void)
+pg_clear()
 {
-	memsetl(pagedir, 0x00000002, sizeof(pagedir));
-	return;
+	memsetl(pagedir, 0, 1024);
 }
 
 /*
@@ -174,91 +114,38 @@ pg_clear(void)
  * memory to the end of the kernel.
  */
 void
-pg_identity(void)
+pg_identity()
 {
-	uint32_t i;
-	uint32_t *pt, ph = 0;
-	pt = pt_alloc(&ph);
+	u32 i;
 
 	for (i = 0; i < 1024; ++i) {
-		/* r/w, present*/
-		pt[i] = (i << 12) | (PG_RW | PG_P);
+		pagedir[i] = (i << 22) | PG_PSE | PG_RW | PG_P;
+
+		if (i >= (u32)_kernel_offset >> 22)
+			pagedir[i] =
+			    (i << 22) + (u32)_kernel_offset
+			    | PG_G | PG_PSE | PG_RW | PG_P;
 	}
-
-	pt[1023] = 0xB8000 | (PG_RW | PG_P);
-
-	pagedir[0] = (uint32_t)ph | (PG_RW | PG_P);
-	pagedir[768] = (uint32_t)ph | (PG_RW | PG_P);
-	pagedir[1023] = (uint32_t)pagedir | (PG_RW | PG_P);
 }
 
 void
-pg_clear_identity(void)
+pg_clear_identity()
 {
-	uint32_t i = 0;
-	uint32_t *pt;
+	u32 i;
 
-	pagedir[0] = PG_RW;
-	pt = pde2pt(768);
+	pagedir = p2v(read_cr3());
 
-	while (i < ((kernel_physical_start) >> 12))
-		/* r/w, not present*/
-		pt[i++] = PG_RW;
+	for (i = 0; i < 1024; ++i) {
+		if (i > ((u32)_kernel_physical_base >> 22) ||
+		    i < ((u32)_kernel_offset + (u32)_kernel_unpaged_end) >> 22)
+			continue;
 
-	virtpagedir = (uint32_t *)0xFFFFF000;
-	flush_tlb();
+		pagedir[i++] = 0;
+	}
 }
 
 void
-pg_enable(void)
+pg_enable()
 {
 	vm_enable_paging(pagedir);
 }
-
-void
-pg_map(uint32_t p_addr, uint32_t v_start, uint32_t v_end, int flags)
-{
-	uint32_t *pt;
-	uint32_t frame, ph;
-	int pte, pde;
-
-	v_start = pg_rounddown(v_start);
-	p_addr = pg_rounddown(p_addr);
-
-	for (; v_start < v_end; v_start += 0x1000) {
-		frame = p_addr;
-
-		pde = v_start >> 22;
-		pte = (v_start >> 12) & 0x3FF;
-
-		if (!(virtpagedir[pde] & 1)) {
-			pt = pt_alloc(&ph);
-			virtpagedir[pde] = (ph & 0xFFFFF000) | flags;
-		} else
-			pt = pde2pt(pde);
-
-		pt[pte] = (frame & 0xFFFFF000) | flags;
-		p_addr += 0x1000;
-	}
-
-	flush_tlb();
-}
-
-void
-pg_free(uint32_t start, uint32_t end)
-{
-	uint32_t *pt;
-	int pte, pde;
-
-	start = pg_rounddown(start);
-
-	for (; start < end; start += 0x1000) {
-		pde = start >> 22;
-		pt = pde2pt(pde);
-		pte = (start >> 12) & 0x3FF;
-		pt[pte] = PG_RW;
-	}
-
-	flush_tlb();
-}
-

@@ -1,5 +1,5 @@
 /*
- * memory allocation
+ * virtual memory management
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,182 +16,228 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/mman.h>
+#include <sys/queue.h>
 #include <sys/multiboot.h>
-#include <sys/trunix.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
+#include <sys/cdefs.h>
 #include <string.h>
+#include <stddef.h>
 
-/* bitmap manipulation macros */
-#define bit_set(x, n)	((x) |= (1 << (n)))
-#define bit_unset(x, n)	((x) &= ~(1 << (n)))
-#define bit_isset(x, n)	((x) & (1 << (n)))
+#include "vm.h"
+#include "trunix.h"
 
-uint32_t *kpagedir;
+u32 *kpagedir;
 
-static uint32_t page_bitmap[0x100000 / 32];
-static unsigned int last_page;
+struct block {
+	u32 sz;
+	LIST_ENTRY(block) entry;
+};
+LIST_HEAD(memlist, block);
+static struct memlist freelist = LIST_HEAD_INITIALIZER(freelist);
 
-void *mmap(void *, size_t, int);
-void munmap(void *, size_t);
+struct sblock {
+	u32 sz;
+	SLIST_ENTRY(sblock) entry;
+};
+SLIST_HEAD(slob, sblock);
+static struct slob heap = SLIST_HEAD_INITIALIZER(heap);
+
 void init_mem(struct kinfo *);
-uint32_t *copykvm(void);
-void alloc_pt(uint32_t *, uint32_t, size_t, uint32_t, int);
-
-static inline uintptr_t alloc_pages(int, int, int);
-static inline void free_pages(int, int);
-
-static inline void
-pg_bitmap_alloc(uintptr_t addr)
-{
-	unsigned int i = addr >> 5;
-	unsigned int order = addr % 32;
-
-	bit_set(page_bitmap[i], order);
-}
-
-static inline void
-pg_bitmap_free(uintptr_t addr)
-{
-	unsigned int i = addr >> 5;
-	unsigned int order = addr % 32;
-
-	bit_unset(page_bitmap[i], order);
-}
-
-static inline int
-pg_bitmap_isused(unsigned int pg)
-{
-	unsigned int i = pg >> 5;
-	unsigned int order = pg % 32;
-
-	return bit_isset(page_bitmap[i], order);
-}
-
-static inline void
-free_pages(int base, int page_n)
-{
-	int i;
-	for (i = base; i < base + page_n; ++i)
-		pg_bitmap_free(i);
-}
-
-static inline uintptr_t
-alloc_pages(int base, int page_n, int prot)
-{
-	int i;
-	uintptr_t p_base, v_start, v_end;
-
-	for (i = base; i < base + page_n; ++i)
-		pg_bitmap_alloc(i);
-
-	p_base = base << 12;
-	v_start = phys2virt(p_base);
-	v_end = phys2virt(i << 12);
-	pg_map(p_base, v_start, v_end, prot);
-
-	return v_start;
-}
+u32 *copykvm();
+void alloc_pt(u32 *, u32, u32, u32, int);
+void *alloc_pages(void *, u32);
+void free_mem(void *, u32);
+void *kmalloc(u32);
+void kfree(void *);
 
 void *
-mmap(void *addr, size_t len, int flags)
+alloc_pages(void *addr, u32 sz)
 {
-	uint32_t i;
-	unsigned int page_n, free = 0;
+	struct block *p, *s;
 
-	if (len == 0)
-		goto err;
+	if (addr == NULL) {
+		LIST_FOREACH(p, &freelist, entry)
+			if (p->sz >= sz)
+				break;
 
-	page_n = pg_roundup(len) >> 12;
+		if (p == NULL)
+			return NULL;
 
-	if (addr != NULL)
-		return (void *)
-		alloc_pages((int)addr >> 12, page_n, flags);
+		addr = p;
+	} else
+		panic("until mapping specific addresses is implemented");
 
-	for (i = 0; i <= last_page; ++i) {
-		if (pg_bitmap_isused(i)) {
-			free = 0;
-			continue;
-		} if (++free == page_n)
-			return (void *)
-			alloc_pages(i + 1 - page_n, page_n, flags);
-	}
+	sz = pg_roundup(sz);
 
-err:
-	return NULL;
+	LIST_REMOVE(p, entry);
+	/* reinsert split block */
+	if (p->sz > sz)
+		free_pages((u8 *)p + sz, p->sz - sz);
+
+	return addr;
 }
 
 void
-munmap(void *addr, size_t len)
+free_pages(void *addr, u32 sz)
 {
-	int page_n = len >> 12;
-	unsigned int pg = virt2phys(addr) >> 12;
+	struct block *p, *n, *tmp;
 
-	pg_free((uintptr_t)addr, (uint32_t)addr + len);
+	if (addr == NULL)
+		panic("tried to free NULL");
 
-	if (page_n >= 0)
-		free_pages(pg, page_n);
+	addr = (void *)pg_rounddown(addr);
+	sz = pg_roundup(sz);
 
-	return;
+	memset(addr, 0x69, sz);
+	n = (struct block *)addr;
+	n->sz = sz;
+
+	LIST_FOREACH_SAFE(p, &freelist, entry, tmp) {
+		if (p->sz >= n->sz)
+			LIST_INSERT_BEFORE(p, n, entry);
+		else if (tmp == NULL)
+			LIST_INSERT_AFTER(p, n, entry);
+		else
+			continue;
+
+		break;
+	}
+}
+
+void *
+kmalloc(u32 sz)
+{
+	struct sblock *p, *s;
+	u16 *hdr;
+
+	sz += sizeof(*hdr);
+	sz = roundup(sz, 8);
+
+	if (sz >= 0x1000)
+		panic("allocating > page size through kmalloc");
+
+	SLIST_FOREACH(p, &heap, entry)
+		if (p->sz >= sz)
+			break;
+
+	if (p == NULL)
+		return NULL;
+
+	if (p->sz > sz) {
+		s = (u8 *)p + sz;
+		s->sz = p->sz - sz;
+		SLIST_INSERT_AFTER(p, s, entry);
+	}
+
+	SLIST_REMOVE(&heap, p, sblock, entry);
+
+	hdr = p;
+	*hdr = sz;
+
+	return hdr + 1;
+}
+
+void
+kfree(void *a)
+{
+	struct sblock *p, *n, *tmp;
+	p = (u16 *)a - 1;
+	p->sz = *(u16 *)p;
+
+	n = SLIST_FIRST(&heap);
+	if (p < n) {
+		if ((u8 *)p + p->sz == n) {
+			SLIST_REMOVE(&heap, n, sblock, entry);
+			p->sz += tmp->sz;
+		}
+		SLIST_INSERT_HEAD(&heap, p, entry);
+		return;
+	}
+
+	SLIST_FOREACH_SAFE(n, &heap, entry, tmp)
+		if (n < p && p < tmp)
+			break;
+
+	if ((u8 *)n + n->sz == p) {
+		n->sz += p->sz;
+		p = n;
+	} else
+		SLIST_INSERT_AFTER(n, p, entry);
+
+	if ((u8 *)p + p->sz == tmp) {
+		SLIST_REMOVE(&heap, tmp, sblock, entry);
+		p->sz += tmp->sz;
+	}
 }
 
 void
 init_mem(struct kinfo *k)
 {
-	int m;
-	uintptr_t i;
+	int m = 0;
+	struct block *p, *n, *tmp;
+	struct sblock *sb;
 
-	memsetl(page_bitmap, ~0, 0x100000 >> 5);
+	LIST_INIT(&freelist);
 
-	for (m = 0; m < k->mmap_n; ++m) {
+	for (; m < k->mmap_n; ++m) {
 		if (k->memmap[m].type != MULTIBOOT_MEMORY_AVAILABLE)
 			continue;
 
-		for (i = k->memmap[m].addr;
-		     i <= k->memmap[m].addr + k->memmap[m].len;
-		     i += 0x1000)
-			pg_bitmap_free(i >> 12);
+		p = (struct block *)p2v(k->memmap[m].addr);
+		p->sz = k->memmap[m].len;
+
+		if (LIST_EMPTY(&freelist))
+			LIST_INSERT_HEAD(&freelist, p, entry);
+		else {
+			LIST_FOREACH_SAFE(n, &freelist, entry, tmp)
+				if (n->sz > p->sz || tmp == NULL)
+					break;
+
+			LIST_INSERT_AFTER(n, p, entry);
+		}
 	}
 
-	last_page = i >> 12;
-	kpagedir = (uint32_t *)phys2virt(read_cr3());
+	/* fixed kernel heap size of 64 KiB for now */
+	sb = alloc_pages(NULL, 0x10000);
+	sb->sz = 0x10000;
+
+	SLIST_INIT(&heap);
+	SLIST_INSERT_HEAD(&heap, sb, entry);
+
+	kpagedir = p2v(read_cr3());
 	return;
 }
 
-uint32_t *
-copykvm(void)
+u32 *
+copykvm()
 {
-	uint32_t *pd = mmap(NULL, 0x1000, PG_RW | PG_P);
+	u32 *pd = alloc_pages(NULL, 0x1000);
 	memcpy(pd, kpagedir, 0x1000);
 	return pd;
 }
 
 void
-alloc_pt(uint32_t *pd, uint32_t v_start,
-size_t len, uint32_t frame, int flags)
+alloc_pt(u32 *pd, u32 va, u32 pa, u32 len, int flags)
 {
-	uint32_t *pt;
+	u32 *pt;
 	int pte, pde;
-	uint32_t v_end = v_start + len;
 
-	v_start = pg_rounddown(v_start);
-	frame = pg_rounddown(frame);
+	va = pg_rounddown(va);
+	pa = pg_rounddown(pa);
+	len = pg_roundup(len);
 
-	for (; v_start < v_end; v_start += 0x1000) {
-		pde = v_start >> 22;
-		pte = (v_start >> 12) & 0x3FF;
+	for (; len > 0; len -= 0x1000) {
+		pde = va >> 22;
+		pte = (va >> 12) & 0x3FF;
 
 		if (!(pd[pde] & 1)) {
-			pt = mmap(NULL, 0x1000, flags);
-			pd[pde] = (virt2phys(pt) & 0xFFFFF000) | flags;
-		} else {
-			pt = (uint32_t *)phys2virt(pd[pde] & 0xFFFFF000);
-			pd[pde] |= flags;
-		}
+			pt = alloc_pages(NULL, 0x1000);
+			pd[pde] = (v2p(pt) & 0xFFFFF000) | flags;
+		} else
+			pt = p2v(pd[pde] & 0xFFFFF000);
 
-		pt[pte] = (frame & 0xFFFFF000) | flags;
-		frame += 0x1000;
+		pt[pte] = (pa & 0xFFFFF000) | flags;
+
+		pa += 0x1000;
+		va += 0x1000;
 	}
 }
