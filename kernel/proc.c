@@ -118,6 +118,7 @@ alloc_thread()
 	u32 sp;
 
 	kstack = alloc_pages(NULL, KSTACK_SIZE);
+	memset(kstack, 0, KSTACK_SIZE);
 	p = (struct proc *)(kstack + KSTACK_SIZE - sizeof(*p));
 	p->kstack = kstack;
 	sp = p;

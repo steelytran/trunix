@@ -26,21 +26,17 @@
 
 struct kinfo k;
 
-#if 0
 void
 test()
 {
 /*
- * for whatever reason, the first call
- * is skipped and instead switches
- * immediately, the rest are fine?
+ * only calls one of the prints?
  */
 	printk("asdfasdfasdfasdf\n");
 	printk("asdfasdfasdfasdf\n");
 	printk("asdfasdfasdfasdf\n");
 	for (;;);
 }
-#endif
 
 /*
  * kernel main
@@ -62,8 +58,8 @@ kmain(struct kinfo *kernel_info)
 
 	load_initrd();
 
+	enqueue(kthread_create(test));
 	init_pmm();
 	initsys();
-	/* enqueue(kthread_create(test)); */
 	init_sched();
 }
