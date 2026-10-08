@@ -4,5 +4,7 @@ iso
 *.o
 *.d
 trunix
-init
+initrd/sbin/*
+initrd/bin/*
 log
+bin/test.S

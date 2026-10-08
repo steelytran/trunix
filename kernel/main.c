@@ -26,8 +26,6 @@
 
 struct kinfo k;
 
-extern void print_memmap();
-
 #if 0
 void
 test()

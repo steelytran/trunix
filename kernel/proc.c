@@ -28,8 +28,8 @@
 
 #define STACK_SIZE 0x1000
 #define KSTACK_SIZE 0x1000
-
 #define ELFMAGIC 0x464C457F
+
 #define GETMEMMAP(x) (&memtab[(x)->pid - 1])
 
 extern u32 *kpagedir;
@@ -84,6 +84,7 @@ struct proghdr {
 
 TAILQ_HEAD(pqueue, proc);
 static struct pqueue queue = TAILQ_HEAD_INITIALIZER(queue);
+static unsigned int pid = 1;
 
 extern void trapret();
 
@@ -138,7 +139,6 @@ alloc_thread()
 static struct proc *
 proc_create()
 {
-	static unsigned int pid = 1;
 	struct proc *p = alloc_thread();
 
 	p->tf->gs = (4 * 8) | 3;
@@ -174,10 +174,9 @@ loadelf(struct proc *p, const char *path)
 	u32 max = 0;
 	int n = 0;
 
-	for (i = ROOT_INO; i < k.ino_n; ++i) {
-	if (strcmp(path, k.dir_tbl[i].name) == 0)
+	for (i = ROOT_INO; i < k.ino_n; ++i)
+		if (strcmp(path, k.dir_tbl[i].name) == 0)
 			goto found;
-	}
 
 	return -1;
 
@@ -312,6 +311,7 @@ void
 initsys()
 {
 	struct proc *p = proc_create();
+	p->pid = pid++;
 
 	if (p == NULL)
 		panic("could not allocate proc struct for init");
@@ -399,6 +399,8 @@ sys_fork()
 	struct mem_map *m1, *m2;
 	struct proc *n = proc_create();
 
+	n->pid = pid++;
+
 	if (n == NULL)
 		return -1;
 
@@ -440,6 +442,12 @@ sys_fork()
 int
 sys_execve(const char *path, const char **argv, const char **envp)
 {
-	/* loadelf(curthread, path); */
-	return -1;
+	struct proc *p = proc_create();
+	p->pid = curthread->pid;
+
+	if (loadelf(p, path) < 0)
+		return -1;
+
+	enqueue(p);
+	dequeue();
 }

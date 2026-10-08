@@ -287,13 +287,11 @@ creat:
 	jmp end_syscall
 
 execve:
-/*
 	pushl %edx
 	pushl %ecx
 	pushl %ebx
 	call sys_execve
 	addl $4 * 3, %esp
-*/
 	jmp end_syscall
 
 mmap:

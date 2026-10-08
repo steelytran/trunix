@@ -36,6 +36,7 @@ CFLAGS += -Wno-int-conversion -Wno-pointer-integer-compare
 
 BIN = trunix
 INIT = initrd/sbin/init
+TEST = initrd/bin/test
 
 UNPAGED_OBJS = \
 head.S.o \
@@ -87,7 +88,11 @@ $(INIT): sbin/init.S
 	$(AS) $(TARGET) -static -c $< -o $<.o
 	$(LD) $<.o -o $@
 
-iso: $(BIN) $(INIT)
+$(TEST): bin/test.S
+	$(AS) $(TARGET) -static -c $< -o $<.o
+	$(LD) $<.o -o $@
+
+iso: $(BIN) $(INIT) $(TEST)
 	mkdir -p iso/boot/grub
 	cp $< iso/boot/$<
 	tar --numeric-owner -czvf iso/boot/initrd -C initrd .

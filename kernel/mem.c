@@ -49,15 +49,6 @@ void free_mem(void *, u32);
 void *kmalloc(u32);
 void kfree(void *);
 
-void
-print_memmap()
-{
-	struct sblock *p;
-
-	SLIST_FOREACH(p, &heap, entry)
-		printk("addr: 0x%x, sz: %dB\n", p, p->sz);
-}
-
 void *
 alloc_pages(void *addr, u32 sz)
 {

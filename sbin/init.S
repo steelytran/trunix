@@ -18,7 +18,7 @@
 
 .text
 path:
-	.skip 1
+	.asciz "/bin/test"
 
 .globl _start
 _start:
@@ -32,13 +32,11 @@ _start:
 	jmp 1b
 
 2: /* child */
-/*
 	movl $8, %eax
 	movl $path, %ebx
 	movl $0, %ecx
 	movl $0, %edx
 	int $0x80
-*/
 0:
 	jmp 0b
 
