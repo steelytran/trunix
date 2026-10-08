@@ -1,5 +1,5 @@
 /*
- * standard input / output
+ * kernel utilities
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,23 +16,24 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _STDIO_H
-#define _STDIO_H
+#include "trunix.h"
 
-#include <stdarg.h>
+__dead void
+panic(const char *msg)
+{
+	char *c;
 
-#define stdin ((struct __FILE *)__stdin)
-#define stdout ((struct __FILE *)__stdout)
-#define stderr ((struct __FILE *)__stderr)
+	for (c = "PANIC: "; *c != '\0'; ++c)
+		write_serial(*c);
 
-typedef struct __FILE {
-	char *_ptr;
-	char *_buf_base;
-	char *_buf_end;
-	short _fd;
-} FILE;
+	for (c = msg; *c != '\0'; ++c)
+		write_serial(*c);
 
-putchar(char);
-printf(const char *, ...);
+	write_serial('\n');
 
-#endif
+	for (;;) {
+		cli();
+		hlt();
+	}
+}
+

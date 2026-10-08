@@ -16,10 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*
 .extern fork
-.extern debug
-*/
+.extern printk
 
 .data
 panic_msg:	.asciz "KERNEL PANIC!\n"
@@ -34,7 +32,7 @@ gpf_msg:	.asciz "General protection fault\n"
 INT_0x00:
 	iret
 
-/* debug exception */
+/* printk exception */
 .globl INT_0x01
 INT_0x01:
 	iret
@@ -63,11 +61,11 @@ INT_0x05:
 .globl INT_0x06
 INT_0x06:
 	pushl $panic_msg
-	call debug
+	call printk
 	addl $4, %esp
 
 	pushl $inv_op_msg
-	call debug
+	call printk
 
 1:
 	cli
@@ -96,11 +94,11 @@ INT_0x09:
 .globl INT_0x0A
 INT_0x0A:
 	pushl $panic_msg
-	call debug
+	call printk
 	addl $4, %esp
 
 	pushl $inv_op_msg
-	call debug
+	call printk
 
 1:	cli
 	hlt
@@ -122,11 +120,11 @@ INT_0x0C:
 .globl INT_0x0D
 INT_0x0D:
 	pushl $panic_msg
-	call debug
+	call printk
 	addl $4, %esp
 
 	pushl $gpf_msg
-	call debug
+	call printk
 
 1:	cli
 	hlt
@@ -139,13 +137,13 @@ INT_0x0E:
 	movl %cr2, %ecx
 
 	pushl $panic_msg
-	call debug
+	call printk
 	addl $4, %esp
 
 	pushl %ecx
 	pushl %eax
 	pushl $pf_msg
-	call debug
+	call printk
 
 1:	cli
 	hlt
@@ -270,7 +268,7 @@ exit:
 	jmp end_syscall
 
 fork:
-	/* call sys_fork */
+	call sys_fork
 	jmp end_syscall
 
 read:

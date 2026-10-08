@@ -18,7 +18,6 @@
 
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
-#include <stdio.h>
 #include <stddef.h>
 
 #include "trunix.h"
@@ -64,10 +63,10 @@ init_trunix(struct multiboot_info *mb_info, u32 magic)
  */
 	cut_memmap(&k, 0x0000, 0x1000);
 
-	/* initrd */
 	fs = (struct multiboot_mod_list *)mb_info->mods_addr;
-	k.initrd_start = fs->mod_start;
-	k.initrd_end = fs->mod_end;
+	cut_memmap(&k,
+	    k.initrd_start = fs->mod_start,
+	    k.initrd_end = fs->mod_end);
 
 	/* setup paging */
 	pg_clear();

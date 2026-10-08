@@ -20,6 +20,9 @@
 
 #include "trunix.h"
 
+void printk(const char *, ...);
+void vprintk(const char *, va_list);
+
 char *
 itoa(int n, unsigned base)
 {
@@ -61,13 +64,21 @@ itoa(int n, unsigned base)
 }
 
 void
-debug(const char *fmt, ...)
+printk(const char *fmt, ...)
 {
-	char *c;
 	va_list args;
-	int base;
 
 	va_start(args, fmt);
+	vprintk(fmt, args);
+	va_end(args);
+}
+
+
+void
+vprintk(const char *fmt, va_list args)
+{
+	char *c;
+	int base;
 
 	for (; *fmt != '\0'; ++fmt) {
 		if (*fmt == '%') {
@@ -80,6 +91,9 @@ debug(const char *fmt, ...)
 			} if (*fmt == 's') {
 				c = va_arg(args, char *);
 				goto flush;
+			} if (*fmt == 'c') {
+				write_serial(va_arg(args, char));
+				continue;
 			}
 
 			switch (*fmt) {
@@ -108,6 +122,4 @@ flush:
 		}
 		write_serial(*fmt);
 	}
-
-	va_end(args);
 }

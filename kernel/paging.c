@@ -18,12 +18,11 @@
 
 #include <sys/cdefs.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "trunix.h"
 #include "vm.h"
 
-static u32 pd[1024] __attribute__((aligned(0x1000)));
+static u32 pd[1024] __aligned(0x1000);
 static u32 *pagedir = pd;
 
 extern u32 vm_enable_paging(u32 *);
@@ -35,37 +34,6 @@ void pg_enable();
 
 void add_memmap(struct kinfo *, u64, u64);
 void cut_memmap(struct kinfo *, u32, u32);
-
-u32 pg_roundup(u32);
-u32 pg_rounddown(u32);
-
-/*
- * round value up to page boundaries.
- */
-u32
-pg_roundup(u32 x)
-{
-	u32 p = x % 0x1000;
-
-	if (p == 0)
-		return x;
-
-	return x + 0x1000 - p;
-}
-
-/*
- * round value down to page boundaries.
- */
-u32
-pg_rounddown(u32 x)
-{
-	u32 p = x % 0x1000;
-
-	if (p == 0)
-		return x;
-
-	return x - p;
-}
 
 /*
  * add memory map entry 
@@ -99,7 +67,7 @@ add_memmap(struct kinfo *k, u64 addr, u64 len)
 		return;
 	}
 
-	panic(); /* no available memmap slot */
+	panic("no available memmap slot");
 }
 
 void
@@ -165,7 +133,7 @@ pg_clear_identity()
 {
 	u32 i;
 
-	pagedir = phys2virt(read_cr3());
+	pagedir = p2v(read_cr3());
 
 	for (i = 0; i < 1024; ++i) {
 		if (i > ((u32)_kernel_physical_base >> 22) ||

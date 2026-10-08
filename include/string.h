@@ -33,5 +33,6 @@ memcmp();
 strcmp();
 u32 strlen();
 char *strncpy();
+char *strlcpy();
 
 #endif

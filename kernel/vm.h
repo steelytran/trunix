@@ -21,6 +21,7 @@
 
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
+#include <sys/queue.h>
 
 #include "trunix.h"
 
@@ -35,11 +36,11 @@
 #define PG_G 0x0100
 
 #ifdef ASM_FILE
-#define virt2phys(x) ((x) - KERNEL_OFFSET)
-#define phys2virt(x) ((x) + KERNEL_OFFSET)
+#define v2p(x) ((x) - KERNEL_OFFSET)
+#define p2v(x) ((x) + KERNEL_OFFSET)
 #else
-#define virt2phys(x) ((u32)(x) & ~KERNEL_OFFSET)
-#define phys2virt(x) ((u32)(x) | KERNEL_OFFSET)
+#define v2p(x) ((u32)(x) & ~KERNEL_OFFSET)
+#define p2v(x) ((u32)(x) | KERNEL_OFFSET)
 #endif
 
 extern char _kernel_physical_base[];
@@ -51,21 +52,54 @@ extern char _kernel_offset[];
 void add_memmap(struct kinfo *, u64, u64);
 void cut_memmap(struct kinfo *, u32, u32);
 
-u32 pg_roundup(u32);
-u32 pg_rounddown(u32);
-
 void pg_clear();
 void pg_identity();
 void pg_clear_identity();
 void pg_enable();
 
-flush_tlb();
+void flush_tlb();
 
-void *alloc_mem(u32);
-void free_mem(void *, u32);
 void init_mem(struct kinfo *k);
 void alloc_pt(u32 *, u32, u32, u32, int);
 
+void *alloc_pages(void *, u32);
+void free_pages(void *, u32);
+void *kmalloc(u32);
+void kfree(void *);
+
 u32 *copykvm();
+
+
+#define pg_roundup(x) roundup((x), 0x1000)
+#define pg_rounddown(x) rounddown((x), 0x1000)
+
+/*
+ * round value up to page boundaries.
+ */
+static inline u32
+roundup(u32 x, u32 a)
+{
+	u32 p = x % a;
+
+	if (p == 0)
+		return x;
+
+	return x + a - p;
+}
+
+/*
+ * round value down to page boundaries.
+ */
+static inline u32
+rounddown(u32 x, u32 a)
+{
+	u32 p = x % a;
+
+	if (p == 0)
+		return x;
+
+	return x - p;
+}
+
 
 #endif

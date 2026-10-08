@@ -21,6 +21,7 @@
 
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
+#include <stdarg.h>
 
 #include "file.h"
 
@@ -79,14 +80,15 @@ struct kinfo {
 	struct dirent *dir_tbl;
 };
 
-void panic();
+__dead void panic(const char *);
 void load_initrd();
 char *itoa(int, unsigned);
 
 void init_serial();
 u8 read_serial();
 void write_serial(u8);
-void debug(const char *, ...);
+void printk(const char *, ...);
+void vprintk(const char *, va_list);
 
 void init_gdt();
 void init_tss();
@@ -94,20 +96,21 @@ void init_idt();
 
 u32 read_cr4();
 u32 read_cr2();
+u32 read_cr3();
 u32 read_cr1();
 u32 read_cr0();
 u32 read_eax();
 u32 read_ebx();
 u32 read_ecx();
 u32 read_edx();
-write_cr4(u32);
-write_cr3(u32);
-write_cr2(u32);
-write_cr1(u32);
-write_cr0(u32);
-write_eax(u32);
-write_ebx(u32);
-write_ecx(u32);
-write_edx(u32);
+void write_cr4(u32);
+void write_cr3(u32);
+void write_cr2(u32);
+void write_cr1(u32);
+void write_cr0(u32);
+void write_eax(u32);
+void write_ebx(u32);
+void write_ecx(u32);
+void write_edx(u32);
 
 #endif

@@ -22,7 +22,10 @@
 #include <sys/queue.h>
 #include <sys/cdefs.h>
 
-enum procstate {RUNNING, READY, SLEEPING, BLOCKED, DEAD};
+#include "file.h"
+#include "vm.h"
+
+#define MAXFILES 16
 
 struct trapframe {
 /* in order of pushal instruction */
@@ -44,7 +47,7 @@ struct trapframe {
 	u32 eip;
 	u32 cs;
 	u32 eflags;
- /* unused by cpl 0 -> 0 switch */
+/* unused by kernel thread switching */
 	u32 esp;
 	u32 ss;
 };
@@ -61,14 +64,14 @@ struct proc {
 	int pid;
 	u32 cr3;
 	u32 kstack;
-	u32 stack;
-	u32 start;
-	u32 end;
 
 	struct context *context;
 	struct trapframe *tf;
 
-	enum procstate state;
+	struct file *ofile[MAXFILES];
+
+	enum {RUNNING, READY, SLEEPING, BLOCKED, DEAD} state;
+
 	struct proc *parent;
 	TAILQ_ENTRY(proc) entries;
 };
@@ -78,6 +81,7 @@ void enqueue(struct proc *);
 void dequeue();
 void yield();
 struct proc *kthread_create(void(*)());
+void init_pmm();
 void init_sched();
 void initsys();
 

@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "trunix.h"
 #include "proc.h"
@@ -26,6 +26,9 @@
 
 struct kinfo k;
 
+extern void print_memmap();
+
+#if 0
 void
 test()
 {
@@ -34,11 +37,12 @@ test()
  * is skipped and instead switches
  * immediately, the rest are fine?
  */
-	debug("asdfasdfasdfasdf\n");
-	debug("asdfasdfasdfasdf\n");
-	debug("asdfasdfasdfasdf\n");
+	printk("asdfasdfasdfasdf\n");
+	printk("asdfasdfasdfasdf\n");
+	printk("asdfasdfasdfasdf\n");
 	for (;;);
 }
+#endif
 
 /*
  * kernel main
@@ -46,6 +50,7 @@ test()
 void
 kmain(struct kinfo *kernel_info)
 {
+	u16 *p;
 	init_gdt();
 	init_tss();
 	init_idt();
@@ -59,7 +64,8 @@ kmain(struct kinfo *kernel_info)
 
 	load_initrd();
 
+	init_pmm();
 	initsys();
-	enqueue(kthread_create(test));
+	/* enqueue(kthread_create(test)); */
 	init_sched();
 }

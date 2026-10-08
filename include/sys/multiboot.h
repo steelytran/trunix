@@ -224,7 +224,7 @@ struct multiboot_mmap_entry {
 #define MULTIBOOT_MEMORY_NVS 4
 #define MULTIBOOT_MEMORY_BADRAM  5
 	u32 type;
-};
+} __packed;
 
 struct multiboot_mod_list {
 	/* the memory used goes from bytes ’mod_start’ to ’mod_end-1’ inclusive */

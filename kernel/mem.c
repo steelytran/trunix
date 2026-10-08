@@ -1,5 +1,5 @@
 /*
- * memory allocation
+ * virtual memory management
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,6 @@
 #include <sys/queue.h>
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
-#include <stdio.h>
 #include <string.h>
 #include <stddef.h>
 
@@ -28,54 +27,83 @@
 
 u32 *kpagedir;
 
+struct block {
+	u32 sz;
+	LIST_ENTRY(block) entry;
+};
 LIST_HEAD(memlist, block);
 static struct memlist freelist = LIST_HEAD_INITIALIZER(freelist);
 
-struct block {
-	unsigned int sz;
-	LIST_ENTRY(block) entry;
+struct sblock {
+	u32 sz;
+	SLIST_ENTRY(sblock) entry;
 };
+SLIST_HEAD(slob, sblock);
+static struct slob heap = SLIST_HEAD_INITIALIZER(heap);
 
 void init_mem(struct kinfo *);
 u32 *copykvm();
 void alloc_pt(u32 *, u32, u32, u32, int);
-void *alloc_mem(u32);
+void *alloc_pages(void *, u32);
 void free_mem(void *, u32);
-
+void *kmalloc(u32);
+void kfree(void *);
 
 void
-free_mem(void *addr, u32 sz)
+print_memmap()
+{
+	struct sblock *p;
+
+	SLIST_FOREACH(p, &heap, entry)
+		printk("addr: 0x%x, sz: %dB\n", p, p->sz);
+}
+
+void *
+alloc_pages(void *addr, u32 sz)
+{
+	struct block *p, *s;
+
+	if (addr == NULL) {
+		LIST_FOREACH(p, &freelist, entry)
+			if (p->sz >= sz)
+				break;
+
+		if (p == NULL)
+			return NULL;
+
+		addr = p;
+	} else
+		panic("until mapping specific addresses is implemented");
+
+	sz = pg_roundup(sz);
+
+	LIST_REMOVE(p, entry);
+	/* reinsert split block */
+	if (p->sz > sz)
+		free_pages((u8 *)p + sz, p->sz - sz);
+
+	return addr;
+}
+
+void
+free_pages(void *addr, u32 sz)
 {
 	struct block *p, *n, *tmp;
-	unsigned int page_n = sz >> 12;
 
 	if (addr == NULL)
-		panic();
+		panic("tried to free NULL");
 
 	addr = (void *)pg_rounddown(addr);
 	sz = pg_roundup(sz);
 
 	memset(addr, 0x69, sz);
 	n = (struct block *)addr;
-	n->sz = page_n;
-
-	LIST_FOREACH_SAFE(p, &freelist, entry, tmp) {
-		if (p + (p->sz << 12) == n) {
-			n = p;
-			n->sz += page_n;
-			continue;
-		}
-
-		if (n + (n->sz << 12) == p) {
-			LIST_REMOVE(p, entry);
-			n->sz += p->sz;
-		}
-	}
+	n->sz = sz;
 
 	LIST_FOREACH_SAFE(p, &freelist, entry, tmp) {
 		if (p->sz >= n->sz)
 			LIST_INSERT_BEFORE(p, n, entry);
-		else if(tmp == NULL)
+		else if (tmp == NULL)
 			LIST_INSERT_AFTER(p, n, entry);
 		else
 			continue;
@@ -85,31 +113,69 @@ free_mem(void *addr, u32 sz)
 }
 
 void *
-alloc_mem(u32 sz)
+kmalloc(u32 sz)
 {
-	struct block *p, *s;
-	void *addr;
-	unsigned int page_n = sz >> 12;
+	struct sblock *p, *s;
+	u16 *hdr;
 
-	LIST_FOREACH(p, &freelist, entry)
-		if (p->sz >= page_n)
+	sz += sizeof(*hdr);
+	sz = roundup(sz, 8);
+
+	if (sz >= 0x1000)
+		panic("allocating > page size through kmalloc");
+
+	SLIST_FOREACH(p, &heap, entry)
+		if (p->sz >= sz)
 			break;
 
 	if (p == NULL)
 		return NULL;
 
-	addr = p;
-	sz = pg_roundup(sz);
-
-	if (p->sz > (3 * page_n) / 2) {
-		s = (struct block *)((char *)p + sz);
-		s->sz = p->sz - page_n;
-		LIST_INSERT_AFTER(p, s, entry);
+	if (p->sz > sz) {
+		s = (u8 *)p + sz;
+		s->sz = p->sz - sz;
+		SLIST_INSERT_AFTER(p, s, entry);
 	}
 
-	LIST_REMOVE(p, entry);
+	SLIST_REMOVE(&heap, p, sblock, entry);
 
-	return addr;
+	hdr = p;
+	*hdr = sz;
+
+	return hdr + 1;
+}
+
+void
+kfree(void *a)
+{
+	struct sblock *p, *n, *tmp;
+	p = (u16 *)a - 1;
+	p->sz = *(u16 *)p;
+
+	n = SLIST_FIRST(&heap);
+	if (p < n) {
+		if ((u8 *)p + p->sz == n) {
+			SLIST_REMOVE(&heap, n, sblock, entry);
+			p->sz += tmp->sz;
+		}
+		SLIST_INSERT_HEAD(&heap, p, entry);
+		return;
+	}
+
+	SLIST_FOREACH_SAFE(n, &heap, entry, tmp)
+		if (n < p && p < tmp)
+			break;
+
+	if ((u8 *)n + n->sz == p) {
+		n->sz += p->sz;
+		p = n;
+	} else
+		SLIST_INSERT_AFTER(n, p, entry);
+
+	if ((u8 *)p + p->sz == tmp) {
+		SLIST_REMOVE(&heap, tmp, sblock, entry);
+		p->sz += tmp->sz;
+	}
 }
 
 void
@@ -117,6 +183,7 @@ init_mem(struct kinfo *k)
 {
 	int m = 0;
 	struct block *p, *n, *tmp;
+	struct sblock *sb;
 
 	LIST_INIT(&freelist);
 
@@ -124,8 +191,8 @@ init_mem(struct kinfo *k)
 		if (k->memmap[m].type != MULTIBOOT_MEMORY_AVAILABLE)
 			continue;
 
-		p = (struct block *)phys2virt(k->memmap[m].addr);
-		p->sz = (k->memmap[m].len >> 12);
+		p = (struct block *)p2v(k->memmap[m].addr);
+		p->sz = k->memmap[m].len;
 
 		if (LIST_EMPTY(&freelist))
 			LIST_INSERT_HEAD(&freelist, p, entry);
@@ -138,41 +205,48 @@ init_mem(struct kinfo *k)
 		}
 	}
 
-	kpagedir = phys2virt(read_cr3());
+	/* fixed kernel heap size of 64 KiB for now */
+	sb = alloc_pages(NULL, 0x10000);
+	sb->sz = 0x10000;
+
+	SLIST_INIT(&heap);
+	SLIST_INSERT_HEAD(&heap, sb, entry);
+
+	kpagedir = p2v(read_cr3());
 	return;
 }
 
 u32 *
 copykvm()
 {
-	u32 *pd = alloc_mem(0x1000);
+	u32 *pd = alloc_pages(NULL, 0x1000);
 	memcpy(pd, kpagedir, 0x1000);
 	return pd;
 }
 
 void
-alloc_pt(u32 *pd, u32 v_start, u32 len, u32 frame, int flags)
+alloc_pt(u32 *pd, u32 va, u32 pa, u32 len, int flags)
 {
 	u32 *pt;
 	int pte, pde;
-	u32 v_end = v_start + len;
 
-	v_start = pg_rounddown(v_start);
-	frame = pg_rounddown(frame);
+	va = pg_rounddown(va);
+	pa = pg_rounddown(pa);
+	len = pg_roundup(len);
 
-	for (; v_start < v_end; v_start += 0x1000) {
-		pde = v_start >> 22;
-		pte = (v_start >> 12) & 0x3FF;
+	for (; len > 0; len -= 0x1000) {
+		pde = va >> 22;
+		pte = (va >> 12) & 0x3FF;
 
 		if (!(pd[pde] & 1)) {
-			pt = alloc_mem(0x1000);
-			pd[pde] = (virt2phys(pt) & 0xFFFFF000) | flags;
-		} else {
-			pt = phys2virt(pd[pde] & 0xFFFFF000);
-			pd[pde] |= flags;
-		}
+			pt = alloc_pages(NULL, 0x1000);
+			pd[pde] = (v2p(pt) & 0xFFFFF000) | flags;
+		} else
+			pt = p2v(pd[pde] & 0xFFFFF000);
 
-		pt[pte] = (frame & 0xFFFFF000) | flags;
-		frame += 0x1000;
+		pt[pte] = (pa & 0xFFFFF000) | flags;
+
+		pa += 0x1000;
+		va += 0x1000;
 	}
 }

@@ -25,15 +25,14 @@ TARGET = -arch i386 -target i386-unknown-none-elf
 
 LDFLAGS = -T kernel/linker.ld 
 ASFLAGS = $(INCLUDE) $(TARGET)
-CFLAGS =  -static -g3 -std=c89 -ffreestanding \
--nostdlib -glldb $(INCLUDE) $(TARGET)
+CFLAGS =  -static -std=c99 -ffreestanding \
+-nostdlib -g3 -glldb $(INCLUDE) $(TARGET)
 
 CFLAGS += -fno-pic -fno-pie -fno-builtin -mno-mmx \
 -mno-sse -mno-sse2 -mno-3dnow -fno-strict-aliasing \
 -fno-stack-protector -mgeneral-regs-only
 
-CFLAGS += -Wno-int-conversion -Wno-incompatible-pointer-types \
--Wno-incompatible-function-pointer-types \
+CFLAGS += -Wno-int-conversion -Wno-pointer-integer-compare
 
 BIN = trunix
 INIT = initrd/sbin/init
@@ -47,6 +46,7 @@ util.S.o \
 string.S.o \
 com.S.o \
 serial.c.o \
+util.c.o \
 
 K_OBJS = \
 $(addprefix unpaged_,$(UNPAGED_OBJS)) \
@@ -58,6 +58,7 @@ pg_utils.S.o \
 mem.c.o \
 string.S.o \
 util.S.o \
+util.c.o \
 com.S.o \
 serial.c.o \
 initrd.c.o \
@@ -106,6 +107,7 @@ qemu-gdb: iso
 	-cdrom trunix.iso \
 	-display cocoa,zoom-to-fit=on \
 	-no-reboot -no-shutdown \
+	-serial file:log \
 	-s -S & \
 	lldb trunix -o "gdb-remote 1234"'
 

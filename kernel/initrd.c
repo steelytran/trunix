@@ -17,15 +17,15 @@
  */
 
 #include <sys/cdefs.h>
-#include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "trunix.h"
 #include "vm.h"
 
 extern struct kinfo k;
 
-static
+static int
 oct2int(unsigned char *str, unsigned len)
 {
 	int n = 0;
@@ -47,12 +47,12 @@ void
 load_initrd()
 {
 	u32 len = k.initrd_end - k.initrd_start;
-	void *tar = (void *)phys2virt(k.initrd_start);
+	void *tar = (void *)p2v(k.initrd_start);
 	u8 *p = tar;
 	unsigned int i = ROOT_INO;
 
-	struct inode *in = alloc_mem(0x2000);
-	struct dirent *dir = alloc_mem(0x2000);
+	struct inode *in = alloc_pages(NULL, 0x2000);
+	struct dirent *dir = alloc_pages(NULL, 0x2000);
 
 	k.ino_tbl = in;
 	k.dir_tbl = dir;
@@ -61,8 +61,8 @@ load_initrd()
 		if (memcmp("ustar\00000", &p[257], 8) != 0)
 			continue;
 
-		dir[i].ino_id = i;
-		strncpy(dir[i].name, &p[1], DIRSIZ);
+		dir[i].inode = i;
+		strlcpy(dir[i].name, &p[1], DIRSIZ);
 
 		in[i].mode = oct2int(&p[100], 6);
 		in[i].uid = oct2int(&p[108], 6);
@@ -73,22 +73,22 @@ load_initrd()
 		switch (p[156]) {
 		case '0': /* FALLTHROUGH */
 		case '1':
-			in[i].type = VFILE;
+			in[i].type = V_FILE;
 			break;
 		case '2':
-			in[i].type = VLINK;
+			in[i].type = V_LINK;
 			break;
 		case '3':
-			in[i].type = VCHAR;
+			in[i].type = V_CHAR;
 			break;
 		case '4':
-			in[i].type = VBLK;
+			in[i].type = V_BLK;
 			break;
 		case '5':
-			in[i].type = VDIR;
+			in[i].type = V_DIR;
 			break;
 		case '6':
-			in[i].type = VFIFO;
+			in[i].type = V_FIFO;
 			break;
 		}
 

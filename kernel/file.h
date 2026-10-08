@@ -21,7 +21,6 @@
 
 #include <sys/cdefs.h>
 
-#define MAXMEMMAP 32
 #define DIRSIZ 128
 #define ROOT_INO 2
 
@@ -29,37 +28,34 @@ enum major_ids {
 	CONSOLE
 };
 
-struct file {
-	enum {FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE} type;
-	int ref;
-	struct inode *ip;
-	int off;
-	unsigned int major;
-};
-
-struct devrw {
-	int (*read)(int, u32, int);
-	int (*write)(int, u32, int);
-};
-
-extern struct devrw devrw[];
-
 struct dirent {
-	unsigned int ino_id;
+	u32 inode;
 	char name[DIRSIZ];
 };
 
+struct file_operations {
+	int (*open)(struct inode *, struct file *);
+	int (*close)(struct inode *, struct file *);
+	int (*read)(struct file *, char *, u32, u32 *);
+	int (*write)(struct file *, const char *, u32, u32 *);
+};
+
+struct file {
+	struct file_operations *ops;
+	struct inode *inode;
+};
+
 struct inode {
-	unsigned short mode;
-	unsigned short nlink;
 	short uid;
 	short gid;
+	u16 mode;
+	u16 nlink;
+	u16 major, minor;
+	enum {V_FILE, V_LINK, V_CHAR, V_BLK, V_DIR, V_FIFO} type;
 	u32 size;
-	long a_time, m_time, s_time;
-	unsigned int major, minor;
-	unsigned int id;
-	enum {VFILE, VLINK, VCHAR, VBLK, VDIR, VFIFO} type;
+	u32 id;
 	u32 addr;
+	long m_time;
 };
 
 #endif
