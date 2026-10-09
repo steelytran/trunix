@@ -1,12 +1,11 @@
 .DS_Store
 *.swp
-iso
 *.iso
 *.o
 *.d
 *.a
+iso
 trunix
 initrd/sbin/*
 initrd/bin/*
 log
-bin/test.S

@@ -1,4 +1,4 @@
-# c standard library
+# init
 # Copyright (C) 2026  spenna
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,42 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-CC = clang
-AS = clang
-LD = ld.lld
-AR = llvm-ar
-OBJCOPY = llvm-objcopy
-GRUB = i686-elf-grub
+INIT = initrd/sbin/init
 
-INCLUDE = -isystem ../../include
-TARGET = -arch i386 -target i386-unknown-none-elf
+$(INIT): sbin/init/init.o sbin/init/crt0.o
+	$(LD) -Llib/libc -lc $^ -o $@
 
-LDFLAGS =
-ASFLAGS = $(INCLUDE) $(TARGET)
-CFLAGS =  -static -std=c99 -ffreestanding \
--nostdlib $(INCLUDE) $(TARGET)
-
-CFLAGS += -fno-pic -fno-pie -fno-builtin -mno-mmx \
--mno-sse -mno-sse2 -mno-3dnow -fno-strict-aliasing \
--fno-stack-protector -mgeneral-regs-only
-
-OBJS = \
-unistd/fork.o
-
-.SUFFIXES:
-.PHONY: all clean
-
-all: libc.a
-
-libc.a: $(OBJS)
-	$(AR) rcs libc.a $^
-
-%.o: %.c
+sbin/init/init.o: sbin/init/init.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-%.o: %.S
-	$(CC) $(CFLAGS) -c $< -o $@
+sbin/init/crt0.o: sbin/init/crt0.S
+	$(AS) $(ASFLAGS) -c $< -o $@
 
-clean:
-	rm -f */*.o
-	rm -f libc.a
+CLEANFILES += $(INIT) sbin/init/init.o sbin/init/crt0.o

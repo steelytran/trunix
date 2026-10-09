@@ -1,5 +1,5 @@
 /*
- * /sbin/init
+ * syscall constants
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,17 +16,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <unistd.h>
+#ifndef _SYS_SYSCALL_H
+#define _SYS_SYSCALL_H
 
-int
-main(void)
-{
-	int x = fork();
+#define SYS_restart 0
+#define SYS_exit 1
+#define SYS_fork 2
+#define SYS_read 3
+#define SYS_write 4
+#define SYS_open 5
+#define SYS_close 6
+#define SYS_creat 7
+#define SYS_execve 8
+#define SYS_mmap 9
 
-	if (x < 0)
-		for (;;); /* failed */
-	else if (x == 0)
-		for (;;); /* child */
-	else
-		for (;;); /* parent */
-}
+#endif

@@ -58,11 +58,11 @@ alloc_pages(void *addr, u32 sz)
 	if (addr == NULL) {
 		LIST_FOREACH(p, &freelist, entry)
 			if (p->sz >= sz)
-				break;
+				goto found;
 
-		if (p == NULL)
-			return NULL;
+		return NULL;
 
+found:
 		addr = p;
 	} else
 		panic("until mapping specific addresses is implemented");

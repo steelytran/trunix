@@ -16,68 +16,29 @@
 
 CC = clang
 AS = clang
+AR = llvm-ar
 LD = ld.lld
 OBJCOPY = llvm-objcopy
 GRUB = i686-elf-grub
 
+ASFLAGS = $(INCLUDE) $(TARGET)
+CFLAGS = -static -std=c99 -ffreestanding -nostdlib \
+-g3 -glldb -fno-pic -fno-pie -fno-builtin -mno-mmx \
+-mno-sse -mno-sse2 -mno-3dnow -fno-strict-aliasing \
+-fno-stack-protector -mgeneral-regs-only -Wno-int-conversion \
+-Wno-pointer-integer-compare $(INCLUDE) $(TARGET) 
+
 INCLUDE = -isystem include
 TARGET = -arch i386 -target i386-unknown-none-elf
-
-LDFLAGS = -T kernel/linker.ld 
-ASFLAGS = $(INCLUDE) $(TARGET)
-CFLAGS =  -static -std=c99 -ffreestanding \
--nostdlib -g3 -glldb $(INCLUDE) $(TARGET)
-
-CFLAGS += -fno-pic -fno-pie -fno-builtin -mno-mmx \
--mno-sse -mno-sse2 -mno-3dnow -fno-strict-aliasing \
--fno-stack-protector -mgeneral-regs-only
-
-CFLAGS += -Wno-int-conversion -Wno-pointer-integer-compare
-
-BIN = trunix
-
-KOBJS = \
-kernel/unpaged_head.S.o \
-kernel/unpaged_init.c.o \
-kernel/unpaged_paging.c.o \
-kernel/unpaged_pg_utils.S.o \
-kernel/unpaged_util.S.o \
-kernel/unpaged_string.S.o \
-kernel/unpaged_com.S.o \
-kernel/unpaged_serial.c.o \
-kernel/unpaged_util.c.o \
-kernel/main.c.o \
-kernel/gate.S.o \
-kernel/interrupt.S.o \
-kernel/paging.c.o \
-kernel/pg_utils.S.o \
-kernel/mem.c.o \
-kernel/string.S.o \
-kernel/util.S.o \
-kernel/util.c.o \
-kernel/com.S.o \
-kernel/serial.c.o \
-kernel/initrd.c.o \
-kernel/string.c.o \
-kernel/proc.c.o \
-kernel/switch.S.o \
 
 .PHONY: all clean iso qemu qemu-gdb
 all: iso
 
-kernel/unpaged_%: kernel/%
-	$(OBJCOPY) --prefix-symbols=__k_unpaged_ $< $@
+include lib/libc/Makefile.inc
+include sbin/init/Makefile.inc
+include kernel/Makefile.inc
 
-$(BIN): $(KOBJS)
-	$(LD) $(LDFLAGS) $^ -o $@
-
-%.S.o: %.S
-	$(AS) $(ASFLAGS) -c $< -o $@
-
-%.c.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-iso: $(BIN)
+iso: $(BIN) $(LIBC) $(INIT)
 	mkdir -p iso/boot/grub
 	cp $< iso/boot/$<
 	tar --numeric-owner -czvf iso/boot/initrd -C initrd .
@@ -102,8 +63,4 @@ qemu-gdb: iso
 	lldb trunix -o "gdb-remote 1234"'
 
 clean:
-	rm -rf iso
-	rm -f *.o
-	rm -f */*.o
-	rm -f $(BIN)
-	rm -f $(BIN).iso
+	rm -rf $(CLEANFILES)
