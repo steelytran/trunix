@@ -231,8 +231,10 @@ alloc_pt(u32 *pd, u32 va, u32 pa, u32 len, int flags)
 		if (!(pd[pde] & 1)) {
 			pt = alloc_pages(NULL, 0x1000);
 			pd[pde] = (v2p(pt) & 0xFFFFF000) | flags;
-		} else
+		} else {
 			pt = p2v(pd[pde] & 0xFFFFF000);
+			pd[pde] |= flags;
+		}
 
 		pt[pte] = (pa & 0xFFFFF000) | flags;
 

@@ -35,47 +35,40 @@ CFLAGS += -fno-pic -fno-pie -fno-builtin -mno-mmx \
 CFLAGS += -Wno-int-conversion -Wno-pointer-integer-compare
 
 BIN = trunix
-INIT = initrd/sbin/init
-TEST = initrd/bin/test
 
-UNPAGED_OBJS = \
-head.S.o \
-init.c.o \
-paging.c.o \
-pg_utils.S.o \
-util.S.o \
-string.S.o \
-com.S.o \
-serial.c.o \
-util.c.o \
-
-K_OBJS = \
-$(addprefix unpaged_,$(UNPAGED_OBJS)) \
-main.c.o \
-gate.S.o \
-interrupt.S.o \
-paging.c.o \
-pg_utils.S.o \
-mem.c.o \
-string.S.o \
-util.S.o \
-util.c.o \
-com.S.o \
-serial.c.o \
-initrd.c.o \
-string.c.o \
-proc.c.o \
-switch.S.o \
-
-OBJS = $(addprefix kernel/,$(K_OBJS))
-
-kernel/unpaged_%: kernel/%
-	$(OBJCOPY) --prefix-symbols=__k_unpaged_ $< $@
+KOBJS = \
+kernel/unpaged_head.S.o \
+kernel/unpaged_init.c.o \
+kernel/unpaged_paging.c.o \
+kernel/unpaged_pg_utils.S.o \
+kernel/unpaged_util.S.o \
+kernel/unpaged_string.S.o \
+kernel/unpaged_com.S.o \
+kernel/unpaged_serial.c.o \
+kernel/unpaged_util.c.o \
+kernel/main.c.o \
+kernel/gate.S.o \
+kernel/interrupt.S.o \
+kernel/paging.c.o \
+kernel/pg_utils.S.o \
+kernel/mem.c.o \
+kernel/string.S.o \
+kernel/util.S.o \
+kernel/util.c.o \
+kernel/com.S.o \
+kernel/serial.c.o \
+kernel/initrd.c.o \
+kernel/string.c.o \
+kernel/proc.c.o \
+kernel/switch.S.o \
 
 .PHONY: all clean iso qemu qemu-gdb
 all: iso
 
-$(BIN): $(OBJS)
+kernel/unpaged_%: kernel/%
+	$(OBJCOPY) --prefix-symbols=__k_unpaged_ $< $@
+
+$(BIN): $(KOBJS)
 	$(LD) $(LDFLAGS) $^ -o $@
 
 %.S.o: %.S
@@ -84,15 +77,7 @@ $(BIN): $(OBJS)
 %.c.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(INIT): sbin/init.S
-	$(AS) $(TARGET) -static -c $< -o $<.o
-	$(LD) $<.o -o $@
-
-$(TEST): bin/test.S
-	$(AS) $(TARGET) -static -c $< -o $<.o
-	$(LD) $<.o -o $@
-
-iso: $(BIN) $(INIT) $(TEST)
+iso: $(BIN)
 	mkdir -p iso/boot/grub
 	cp $< iso/boot/$<
 	tar --numeric-owner -czvf iso/boot/initrd -C initrd .

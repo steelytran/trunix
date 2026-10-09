@@ -1,8 +1,10 @@
 .DS_Store
+*.swp
 iso
 *.iso
 *.o
 *.d
+*.a
 trunix
 initrd/sbin/*
 initrd/bin/*

@@ -123,6 +123,7 @@ alloc_thread()
 	u32 sp;
 
 	kstack = alloc_pages(NULL, KSTACK_SIZE);
+	assert(kstack != NULL);
 	memset(kstack, 0, KSTACK_SIZE);
 	p = (struct proc *)(kstack + KSTACK_SIZE - sizeof(*p));
 	p->kstack = kstack;
@@ -169,15 +170,14 @@ loadelf(struct proc *p, const char *path)
 {
 	int i;
 	u32 *pd;
-	u32 mem;
-	u32 bin;
-	u32 sz;
+	u32 mem, bin, sz;
 	struct elfhdr *elf;
 	struct proghdr *ph;
 	struct mem_map *m;
 	u32 start, end;
 	u32 min = ~0;
 	u32 max = 0;
+	u32 off = 0;
 	int n = 0;
 
 	for (i = ROOT_INO; i < k.ino_n; ++i)
@@ -217,8 +217,9 @@ found:
 			max = pg_roundup(end);
 	}
 
-	sz = max - min + STACK_SIZE;
+	sz = pg_roundup(max - min + STACK_SIZE);
 	mem = alloc_pages(NULL, sz);
+	/* assert */
 	memset(mem, 0, sz);
 	m = kmalloc(sizeof(struct mem_map) * (n + 1));
 	GETMEMMAP(p)->sz = sz;
@@ -236,14 +237,13 @@ found:
 			continue;
 		}
 
-		
 		m[n].va = ph[i].va;
-		m[n].pa = v2p(mem);
+		m[n].pa = v2p(mem + off);
 		m[n].len = pg_roundup(ph[i].memsz);
 		
 		SLIST_INSERT_HEAD(GETMEMMAP(p), &m[n], entry);
 
-		memmove((mem + ph[i].va % 0x1000),
+		memmove((mem + off + ph[i].va % 0x1000),
 		    (bin + ph[i].off),
 		    ph[i].filesz);
 
@@ -254,26 +254,24 @@ found:
 		    PG_US | PG_RW | PG_P);
 
 		++n;
-		mem += pg_roundup(ph[i].memsz);
+		off += pg_roundup(ph[i].memsz);
 	}
 
 	p->cr3 = v2p(pd);
 	p->tf->eip = elf->entry;
 	p->tf->esp = KERNEL_OFFSET;
-
 	
 	m[n].va = KERNEL_OFFSET - STACK_SIZE;
-	m[n].pa = v2p(mem - STACK_SIZE);
+	m[n].pa = v2p(mem + sz - STACK_SIZE);
 	m[n].len = STACK_SIZE;
-	
-
-	SLIST_INSERT_HEAD(GETMEMMAP(p), &m[n], entry);
 
 	alloc_pt(pd,
 	    m[n].va,
 	    m[n].pa,
 	    m[n].len,
 	    PG_US | PG_RW | PG_P);
+
+	SLIST_INSERT_HEAD(GETMEMMAP(p), &m[n], entry);
 
 	return 0;
 }
@@ -405,10 +403,10 @@ sys_fork()
 	struct mem_map *m1, *m2;
 	struct proc *n = proc_create();
 
-	n->pid = pid++;
-
 	if (n == NULL)
 		return -1;
+
+	n->pid = pid++;
 
 	mem = alloc_pages(NULL, GETMEMMAP(curthread)->sz);
 	if (mem == NULL)

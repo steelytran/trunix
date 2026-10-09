@@ -19,6 +19,6 @@
 #ifndef _UNISTD_H
 #define _UNISTD_H
 
-fork();
+int fork(void);
 
 #endif
