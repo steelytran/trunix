@@ -20,5 +20,6 @@
 #define _UNISTD_H
 
 int fork(void);
+int execve(const char *, const char **, const char **);
 
 #endif

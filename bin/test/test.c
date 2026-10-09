@@ -1,5 +1,5 @@
 /*
- * assertations
+ * test binary
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,18 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _ASSERT_H
-#define _ASSERT_H
+#include <unistd.h>
 
-#include <sys/cdefs.h>
-
-#ifdef NDEBUG
-#define assert(x) (void)(0)
-#else
-#define assert(x) ((x) ? (void)0 : __assert_fail(#x, __FILE__, __LINE__, __func__))
-#endif
-
-__dead void __assert_fail(const char *, const char *, int, const char *);
-
-#endif
-
+int
+main(void)
+{
+	for (;;);
+}

@@ -210,7 +210,13 @@ u32 *
 copykvm()
 {
 	u32 *pd = alloc_pages(NULL, 0x1000);
-	memcpy(pd, kpagedir, 0x1000);
+
+	memsetl(pd, 0, 1024);
+
+	memcpyl(pd + (KERNEL_OFFSET >> 22),
+	    kpagedir + (KERNEL_OFFSET >> 22),
+	    1024 - (KERNEL_OFFSET >> 22));
+
 	return pd;
 }
 
@@ -230,6 +236,7 @@ alloc_pt(u32 *pd, u32 va, u32 pa, u32 len, int flags)
 
 		if (!(pd[pde] & 1)) {
 			pt = alloc_pages(NULL, 0x1000);
+			memsetl(pt, 0, 1024);
 			pd[pde] = (v2p(pt) & 0xFFFFF000) | flags;
 		} else {
 			pt = p2v(pd[pde] & 0xFFFFF000);

@@ -177,7 +177,6 @@ loadelf(struct proc *p, const char *path)
 	u32 start, end;
 	u32 min = ~0;
 	u32 max = 0;
-	u32 off = 0;
 	int n = 0;
 
 	for (i = ROOT_INO; i < k.ino_n; ++i)
@@ -238,12 +237,12 @@ found:
 		}
 
 		m[n].va = ph[i].va;
-		m[n].pa = v2p(mem + off);
+		m[n].pa = v2p(mem);
 		m[n].len = pg_roundup(ph[i].memsz);
 		
 		SLIST_INSERT_HEAD(GETMEMMAP(p), &m[n], entry);
 
-		memmove((mem + off + ph[i].va % 0x1000),
+		memmove((mem + ph[i].va % 0x1000),
 		    (bin + ph[i].off),
 		    ph[i].filesz);
 
@@ -254,7 +253,7 @@ found:
 		    PG_US | PG_RW | PG_P);
 
 		++n;
-		off += pg_roundup(ph[i].memsz);
+		mem += pg_roundup(ph[i].memsz);
 	}
 
 	p->cr3 = v2p(pd);
@@ -262,7 +261,7 @@ found:
 	p->tf->esp = KERNEL_OFFSET;
 	
 	m[n].va = KERNEL_OFFSET - STACK_SIZE;
-	m[n].pa = v2p(mem + sz - STACK_SIZE);
+	m[n].pa = v2p(mem);
 	m[n].len = STACK_SIZE;
 
 	alloc_pt(pd,

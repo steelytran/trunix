@@ -25,8 +25,9 @@ ASFLAGS = $(INCLUDE) $(TARGET)
 CFLAGS = -static -std=c99 -ffreestanding -nostdlib \
 -g3 -glldb -fno-pic -fno-pie -fno-builtin -mno-mmx \
 -mno-sse -mno-sse2 -mno-3dnow -fno-strict-aliasing \
--fno-stack-protector -mgeneral-regs-only -Wno-int-conversion \
--Wno-pointer-integer-compare $(INCLUDE) $(TARGET) 
+-Wno-pointer-integer-compare -Wno-int-conversion \
+-fno-stack-protector -mstack-alignment=4 -mgeneral-regs-only \
+$(INCLUDE) $(TARGET) 
 
 INCLUDE = -isystem include
 TARGET = -arch i386 -target i386-unknown-none-elf
@@ -36,9 +37,10 @@ all: iso
 
 include lib/libc/Makefile.inc
 include sbin/init/Makefile.inc
+include bin/test/Makefile.inc
 include kernel/Makefile.inc
 
-iso: $(BIN) $(LIBC) $(INIT)
+iso: $(BIN) $(LIBC) $(INIT) $(TEST)
 	mkdir -p iso/boot/grub
 	cp $< iso/boot/$<
 	tar --numeric-owner -czvf iso/boot/initrd -C initrd .
@@ -58,7 +60,6 @@ qemu-gdb: iso
 	-cdrom trunix.iso \
 	-display cocoa,zoom-to-fit=on \
 	-no-reboot -no-shutdown \
-	-serial file:log \
 	-s -S & \
 	lldb trunix -o "gdb-remote 1234"'
 

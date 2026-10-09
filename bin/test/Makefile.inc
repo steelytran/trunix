@@ -1,4 +1,4 @@
-# c standard library
+# test binary
 # Copyright (C) 2026  spenna
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,30 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-LIBC = lib/libc/libc.a
+TEST = initrd/bin/test
 
-LOBJS += \
-lib/libc/unistd/fork.o \
-lib/libc/unistd/execve.o
+$(TEST): bin/test/test.o bin/test/crt0.o
+	$(LD) -Llib/libc -lc $^ -o $@
 
-LOBJS += \
-lib/libc/string/memcmp.o \
-lib/libc/string/memcpy.o \
-lib/libc/string/memmove.o \
-lib/libc/string/memset.o \
-lib/libc/string/strcmp.o \
-lib/libc/string/strlcpy.o \
-lib/libc/string/strlen.o \
-lib/libc/string/strncmp.o \
-lib/libc/string/strncpy.o \
-
-$(LIBC): $(LOBJS)
-	$(AR) rcs $@ $^
-
-%.S.o: %.S
-	$(AS) $(ASFLAGS) -c $< -o $@
-
-%.c.o: %.c
+bin/test/test.o: bin/test/test.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-CLEANFILES += $(LOBJS) $(LIBC)
+bin/test/crt0.o: bin/test/crt0.S
+	$(AS) $(ASFLAGS) -c $< -o $@
+
+CLEANFILES += $(TEST) bin/test/test.o bin/test/crt0.o

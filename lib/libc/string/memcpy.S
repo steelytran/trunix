@@ -1,5 +1,5 @@
 /*
- * assertations
+ * libc string.h - asm
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,18 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _ASSERT_H
-#define _ASSERT_H
+.text
+.globl memcpy
+memcpy:
+	pushl %esi
+	pushl %edi
 
-#include <sys/cdefs.h>
+	movl 12(%esp), %edi
+	movl 16(%esp), %esi
+	movl 20(%esp), %ecx
+	rep movsb
 
-#ifdef NDEBUG
-#define assert(x) (void)(0)
-#else
-#define assert(x) ((x) ? (void)0 : __assert_fail(#x, __FILE__, __LINE__, __func__))
-#endif
+	movl 20(%esp), %eax
 
-__dead void __assert_fail(const char *, const char *, int, const char *);
-
-#endif
-
+	popl %edi
+	popl %esi
+	ret 

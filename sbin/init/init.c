@@ -17,16 +17,17 @@
  */
 
 #include <unistd.h>
+#include <stddef.h>
 
 int
 main(void)
 {
-	int x = fork();
-
-	if (x < 0)
+	int pid;
+ 
+	if ((pid = fork()) == 0)
+		execve("/bin/test", NULL, NULL);
+	if (pid == -1)
 		for (;;); /* failed */
-	else if (x == 0)
-		for (;;); /* child */
-	else
-		for (;;); /* parent */
+
+	for (;;);
 }
