@@ -23,6 +23,8 @@
 #include "trunix.h"
 #include "vm.h"
 
+#define FLAGS MULTIBOOT_INFO_MEM_MAP /* | MULTIBOOT_INFO_FRAMEBUFFER_INFO */
+
 struct kinfo k;
 
 struct multiboot_info *
@@ -35,7 +37,7 @@ init_trunix(struct multiboot_info *mb_info, u32 magic)
 	if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
 		return NULL;
 
-	if (!(mb_info->flags >> 6 & 1))
+	if (!(mb_info->flags & FLAGS))
 		return NULL;
 
 	k.mbi = *mb_info;

@@ -1,5 +1,5 @@
 /*
- * entry point
+ * parameters
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,36 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define ASM_FILE
-#include <sys/multiboot.h>
+#ifndef _SYS_PARAM
+#define _SYS_PARAM
 
-#define FLAGS (MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO /* | MULTIBOOT_VIDEO_MODE */)
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 
-.section .multiboot
-	.align 4
-	.long MULTIBOOT_HEADER_MAGIC
-	.long FLAGS
-	.long -(MULTIBOOT_HEADER_MAGIC + FLAGS) /* checksum */
-
-.text
-.globl TRUNIX
-TRUNIX:
-	mov $stack, %esp
-
-	pushl %eax
-	pushl %ebx
-
-	call init_trunix
-
-	pushl %eax
-	call kmain
-
-	cli
-1:
-	hlt
-	jmp 1b
-
-.bss
-.align 16
-	.skip 0x4000
-stack:
+#endif

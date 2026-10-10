@@ -1,5 +1,5 @@
 /*
- * entry point
+ * console driver
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,36 +16,29 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define ASM_FILE
-#include <sys/multiboot.h>
+#include "file.h"
+#include "console.h"
 
-#define FLAGS (MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO /* | MULTIBOOT_VIDEO_MODE */)
+int
+console_open(struct inode *inode, struct file *file)
+{
+	return 0;
+}
 
-.section .multiboot
-	.align 4
-	.long MULTIBOOT_HEADER_MAGIC
-	.long FLAGS
-	.long -(MULTIBOOT_HEADER_MAGIC + FLAGS) /* checksum */
+int
+console_close(struct inode *inode, struct file *file)
+{
+	return -1;
+}
 
-.text
-.globl TRUNIX
-TRUNIX:
-	mov $stack, %esp
+int
+console_read(struct file *file, char *buf, u32 sz, u32 *off)
+{
+	return -1;
+}
 
-	pushl %eax
-	pushl %ebx
-
-	call init_trunix
-
-	pushl %eax
-	call kmain
-
-	cli
-1:
-	hlt
-	jmp 1b
-
-.bss
-.align 16
-	.skip 0x4000
-stack:
+int
+console_write(struct file *file, const char *buf, u32 sz, u32 *off)
+{
+	return -1;
+}

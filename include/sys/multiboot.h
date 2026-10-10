@@ -190,7 +190,7 @@ struct multiboot_info {
 #define MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED 0
 #define MULTIBOOT_FRAMEBUFFER_TYPE_RGB		 1
 #define MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT		 2
-	u8 framebufferype;
+	u8 framebuffer_type;
 	union {
 		struct {
 			u32 framebuffer_palette_addr;

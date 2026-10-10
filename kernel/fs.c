@@ -1,5 +1,5 @@
 /*
- * initial ramdisk
+ * initial ramdisk and vfs
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -19,11 +19,26 @@
 #include <sys/cdefs.h>
 #include <string.h>
 #include <stddef.h>
+#include <assert.h>
 
 #include "trunix.h"
 #include "vm.h"
+#include "file.h"
+#include "proc.h"
+#include "console.h"
 
 extern struct kinfo k;
+
+const struct file_operations console_ops = {
+	.open = console_open,
+	.close = console_close,
+	.read = console_read,
+	.write = console_write,
+};
+
+static const struct file_operations *cdev_ops[] = {
+	[CONSOLE] = &console_ops,
+};
 
 static int
 oct2int(unsigned char *str, unsigned len)
@@ -93,7 +108,7 @@ load_initrd()
 		}
 
 		in[i].major = oct2int(&p[329], 7);
-		in[i].minor = oct2int(&p[337], 7);
+		/* in[i].minor = oct2int(&p[337], 7); */
 
 		if (in[i].size > 0)
 			in[i].addr = &p[512];
@@ -104,5 +119,55 @@ load_initrd()
 		++i;
 	}
 
-	k.ino_n = i;
+	dir[i].inode = i;
+	strlcpy(dir[i].name, "/dev/console", DIRSIZ);
+	in[i].type = V_CHAR;
+	in[i].major = CONSOLE;
+
+	k.ino_n = i + 1;
+}
+
+int
+sys_open(const char* path, int oflag, ...)
+{
+	int fd, i;
+	struct file *f;
+	struct proc *p = getproc();
+
+	assert(p != NULL);
+
+	for (i = ROOT_INO; i < k.ino_n; ++i)
+		if (strcmp(path, k.dir_tbl[i].name) == 0)
+			goto found;
+
+	return -1;
+
+found:
+	for (fd = 0; p->ofile[fd] != NULL; ++fd)
+		;
+
+	if (fd == MAXFILES)
+		return -1;
+
+	f = kmalloc(sizeof(struct file));
+	p->ofile[fd] = f;
+	f->inode = &k.ino_tbl[k.dir_tbl[i].inode];
+
+	(*cdev_ops[f->inode->major]->open)(f->inode, f);
+}
+
+int
+sys_write(int fd, const void *buf, size_t count)
+{
+	struct file *f;
+	struct proc *p = getproc();
+
+
+	printk((char *)buf);
+
+	for (;;);
+
+	f = p->ofile[fd];
+	if (f == NULL)
+		return -1;
 }

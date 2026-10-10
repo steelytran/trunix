@@ -33,11 +33,12 @@ struct kinfo k;
 void
 kmain(struct kinfo *kernel_info)
 {
-	u16 *p;
+	int i;
+
+	assert(kernel_info != NULL);
 	init_gdt();
 	init_tss();
 	init_idt();
-
 	init_serial();
 
 	memcpy(&k, kernel_info, sizeof(struct kinfo));
@@ -46,6 +47,7 @@ kmain(struct kinfo *kernel_info)
 	init_mem(&k);
 
 	load_initrd();
+	//((volatile u32 *)k.mbi.framebuffer_addr)[m]
 
 	init_pmm();
 	initsys();

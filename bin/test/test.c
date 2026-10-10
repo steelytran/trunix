@@ -17,9 +17,12 @@
  */
 
 #include <unistd.h>
+#include <string.h>
 
 int
 main(void)
 {
+	const char buf[] = "asdfasdfsadf\n";
+	write(1, buf, strlen(buf));
 	for (;;);
 }

@@ -299,6 +299,12 @@ kthread_create(void (*eip)())
 	return p;
 }
 
+struct proc *
+getproc(void)
+{
+	return curthread;
+}
+
 void
 init_pmm()
 {
@@ -315,14 +321,14 @@ init_pmm()
 void
 initsys()
 {
-	struct proc *p = proc_create();
-	p->pid = pid++;
+	curthread = proc_create();
+	curthread->pid = pid++;
 
-	assert(p != NULL);
+	assert(curthread != NULL);
+	assert(loadelf(curthread, "/sbin/init") >= 0);
+	sys_open("/dev/console", 0);
 
-	assert(loadelf(p, "/sbin/init") >= 0);
-
-	enqueue(p);
+	enqueue(curthread);
 }
 
 void

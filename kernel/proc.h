@@ -27,8 +27,6 @@
 
 #define NOKTHREAD
 
-#define MAXFILES 16
-
 struct trapframe {
 /* in order of pushal instruction */
 	u32 edi;
@@ -85,6 +83,7 @@ void yield();
 void init_pmm();
 void init_sched();
 void initsys();
+struct proc *getproc(void);
 
 #ifndef NOKTHREAD
 struct proc *kthread_create(void(*)());

@@ -116,11 +116,11 @@ kmalloc(u32 sz)
 
 	SLIST_FOREACH(p, &heap, entry)
 		if (p->sz >= sz)
-			break;
+			goto found;
 
-	if (p == NULL)
-		return NULL;
+	return NULL;
 
+found:
 	if (p->sz > sz) {
 		s = (u8 *)p + sz;
 		s->sz = p->sz - sz;

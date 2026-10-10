@@ -23,6 +23,7 @@
 
 #define DIRSIZ 128
 #define ROOT_INO 2
+#define MAXFILES 16
 
 enum major_ids { 
 	CONSOLE
@@ -31,13 +32,6 @@ enum major_ids {
 struct dirent {
 	u32 inode;
 	char name[DIRSIZ];
-};
-
-struct file_operations {
-	int (*open)(struct inode *, struct file *);
-	int (*close)(struct inode *, struct file *);
-	int (*read)(struct file *, char *, u32, u32 *);
-	int (*write)(struct file *, const char *, u32, u32 *);
 };
 
 struct file {
@@ -50,12 +44,21 @@ struct inode {
 	short gid;
 	u16 mode;
 	u16 nlink;
-	u16 major, minor;
+	enum major_ids major;
 	enum {V_FILE, V_LINK, V_CHAR, V_BLK, V_DIR, V_FIFO} type;
 	u32 size;
 	u32 id;
 	u32 addr;
 	long m_time;
 };
+
+struct file_operations {
+	int (*open) (struct inode *, struct file *);
+	int (*close) (struct inode *, struct file *);
+	int (*read) (struct file *, char *, u32, u32 *);
+	int (*write) (struct file *, const char *, u32, u32 *);
+};
+
+int sys_open(const char* path, int oflag, ...);
 
 #endif

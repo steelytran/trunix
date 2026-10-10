@@ -35,10 +35,11 @@ kernel/util.S.o \
 kernel/util.c.o \
 kernel/com.S.o \
 kernel/serial.c.o \
-kernel/initrd.c.o \
+kernel/fs.c.o \
 kernel/string.c.o \
 kernel/proc.c.o \
 kernel/switch.S.o \
+kernel/console.c.o \
 
 BIN = trunix
 

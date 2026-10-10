@@ -17,8 +17,12 @@
 LIBC = lib/libc/libc.a
 
 LOBJS += \
+lib/libc/fcntl/open.o \
+
+LOBJS += \
 lib/libc/unistd/fork.o \
-lib/libc/unistd/execve.o
+lib/libc/unistd/execve.o \
+lib/libc/unistd/write.o \
 
 LOBJS += \
 lib/libc/string/memcmp.o \

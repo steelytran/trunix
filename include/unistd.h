@@ -19,7 +19,16 @@
 #ifndef _UNISTD_H
 #define _UNISTD_H
 
+#include <stddef.h>
+
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
+
+/* long syscall(long, ...);* */
+
 int fork(void);
 int execve(const char *, const char **, const char **);
+int write(int, const void *, size_t);
 
 #endif

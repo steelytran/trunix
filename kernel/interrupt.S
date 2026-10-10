@@ -16,7 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-.extern fork
 .extern printk
 
 .data
@@ -275,6 +274,11 @@ read:
 	jmp end_syscall
 
 write:
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+	call sys_write
+	addl $4 * 3, %esp
 	jmp end_syscall
 
 open:
