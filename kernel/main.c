@@ -16,14 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/trunix.h>
+#include <trunix/proc.h>
+#include <trunix/vm.h>
 #include <string.h>
 #include <stddef.h>
 #include <assert.h>
-
-#include "trunix.h"
-#include "proc.h"
-#include "vm.h"
-#include "kbd.h"
 
 struct kinfo k;
 

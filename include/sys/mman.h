@@ -1,5 +1,5 @@
 /*
- * kernel utilities
+ * memory management
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,39 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <trunix/trunix.h>
-#include <assert.h>
+#ifndef _SYS_MMAN_H
+#define _SYS_MMAN_H
 
-__dead void
-abort()
-{
-	for (;;) {
-		cli();
-		hlt();
-	}
-}
+#include <stddef.h>
 
-__dead void
-panic(const char *msg)
-{
-	char *c;
+void *mmap(void *, size_t, int, int, int, long);
+void munmap(void *, size_t);
 
-	for (c = "PANIC: "; *c != '\0'; ++c)
-		write_serial(*c);
-
-	for (c = msg; *c != '\0'; ++c)
-		write_serial(*c);
-
-	write_serial('\n');
-
-	abort();
-}
-
-__dead void
-__assert_fail(const char *expr, const char *file, int line, const char *func)
-{
-	printk("Assertation failed: %s (%s: %s: %d)\n",
-	    expr, file, func, line);
-
-	abort();
-}
+#endif

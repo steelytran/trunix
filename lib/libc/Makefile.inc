@@ -17,6 +17,9 @@
 LIBC = lib/libc/libc.a
 
 LOBJS += \
+lib/libc/sys/mman/mmap.o \
+
+LOBJS += \
 lib/libc/fcntl/open.o \
 
 LOBJS += \

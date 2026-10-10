@@ -4,8 +4,8 @@
 *.o
 *.d
 *.a
-iso
-trunix
+/iso
+/log
+/trunix
 initrd/sbin/*
 initrd/bin/*
-log

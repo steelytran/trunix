@@ -20,8 +20,7 @@
 #define _FBDEV_H
 
 #include <sys/cdefs.h>
-
-#include "file.h"
+#include <trunix/fs.h>
 
 struct fbdev {
 	u32 addr;

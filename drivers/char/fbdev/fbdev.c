@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/vm.h>
+#include <trunix/fs.h>
 #include <sys/multiboot.h>
 #include <stddef.h>
 #include <string.h>
 
-#include "vm.h"
-#include "file.h"
 #include "fbdev.h"
 
 extern struct kinfo k;
@@ -30,31 +30,31 @@ int
 fbdev_open(struct inode *inode, struct file *file)
 {
 	struct fbdev *fb;
-	struct multiboot_info *mbi;
+	struct multiboot_info mbi = k.mbi;
 
 	if (file->data == NULL) {
 		fb = kmalloc(sizeof(struct fbdev));
 		*fb = (struct fbdev) {
-			.addr = mbi->framebuffer_addr,
-			.pitch = mbi->framebuffer_pitch,
-			.width = mbi->framebuffer_width,
-			.height = mbi->framebuffer_height,
-			.bpp = mbi->framebuffer_bpp,
-			.type = mbi->framebuffer_type
+			.addr = (u32)mbi.framebuffer_addr,
+			.pitch = mbi.framebuffer_pitch,
+			.width = mbi.framebuffer_width,
+			.height = mbi.framebuffer_height,
+			.bpp = mbi.framebuffer_bpp,
+			.type = mbi.framebuffer_type
 		};
 
 		switch (fb->type) {
 		case (MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED):
-			fb->palette_addr = mbi->framebuffer_palette_addr;
-			fb->palette_num_colors = mbi->framebuffer_palette_num_colors;
+			fb->palette_addr = mbi.framebuffer_palette_addr;
+			fb->palette_num_colors = mbi.framebuffer_palette_num_colors;
 			break;
 		case (MULTIBOOT_FRAMEBUFFER_TYPE_RGB):
-			fb->red_field_position = mbi->framebuffer_red_field_position;
-			fb->red_mask_size = mbi->framebuffer_red_mask_size;
-			fb->green_field_position = mbi->framebuffer_green_field_position;
-			fb->green_mask_size = mbi->framebuffer_green_mask_size;
-			fb->blue_field_position = mbi->framebuffer_blue_field_position;
-			fb->blue_mask_size = mbi->framebuffer_blue_mask_size;
+			fb->red_field_position = mbi.framebuffer_red_field_position;
+			fb->red_mask_size = mbi.framebuffer_red_mask_size;
+			fb->green_field_position = mbi.framebuffer_green_field_position;
+			fb->green_mask_size = mbi.framebuffer_green_mask_size;
+			fb->blue_field_position = mbi.framebuffer_blue_field_position;
+			fb->blue_mask_size = mbi.framebuffer_blue_mask_size;
 		}
 
 		file->data = fb;
@@ -81,4 +81,14 @@ fbdev_write(struct file *file, const char *buf, u32 sz, u32 *off)
 		return -1;
 
 	memcpy(((struct fbdev *)file->data)->addr, buf, sz);
+}
+
+int
+fbdev_mmap(struct file *file, struct vm_region *mem)
+{
+	if (file->data == NULL)
+		return -1;
+
+	mem->pa = ((struct fbdev *)file->data)->addr;
+	return 0;
 }

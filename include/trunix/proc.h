@@ -16,14 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _PROC_H
-#define _PROC_H
+#ifndef _TRUNIX_PROC_H
+#define _TRUNIX_PROC_H
 
+#include <trunix/fs.h>
+#include <trunix/vm.h>
 #include <sys/queue.h>
 #include <sys/cdefs.h>
-
-#include "file.h"
-#include "vm.h"
 
 #define NOKTHREAD
 

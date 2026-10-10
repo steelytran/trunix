@@ -16,14 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _TRUNIX_H
-#define _TRUNIX_H
+#ifndef _TRUNIX_TRUNIX_H
+#define _TRUNIX_TRUNIX_H
 
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
 #include <stdarg.h>
-
-#include "file.h"
 
 #define kmain __k_unpaged_kmain
 

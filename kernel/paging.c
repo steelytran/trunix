@@ -16,11 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/trunix.h>
+#include <trunix/vm.h>
 #include <sys/cdefs.h>
 #include <string.h>
-
-#include "trunix.h"
-#include "vm.h"
 
 static u32 pd[1024] __aligned(0x1000);
 static u32 *pagedir = pd;

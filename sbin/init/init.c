@@ -27,7 +27,7 @@ main(void)
 	if ((pid = fork()) == 0)
 		execve("/bin/test", NULL, NULL);
 	if (pid == -1)
-		for (;;); /* failed */
+		return -1; /* failed */
 
 	for (;;);
 }

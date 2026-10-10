@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/vm.h>
+#include <trunix/fs.h>
 #include <stddef.h>
 
-#include "vm.h"
-#include "file.h"
 #include "console.h"
 
 extern struct kinfo k;

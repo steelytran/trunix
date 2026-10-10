@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <sys/mman.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
@@ -23,12 +24,9 @@
 int
 main(void)
 {
+	char *fb;
 	int fd;
-	static char buf[0x100];
 
 	fd = open("/dev/fbdev", 0);
-
-	memset(buf, 123, 0x100);
-	write(fd, buf, 0x100);
-	for (;;);
+	/* fb = mmap(NULL, 0x10000, 0, 0, 0, 0); */
 }

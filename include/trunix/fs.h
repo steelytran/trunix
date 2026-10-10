@@ -16,10 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _FILE_H
-#define _FILE_H
+#ifndef _TRUNIX_FS_H
+#define _TRUNIX_FS_H
 
 #include <sys/cdefs.h>
+
+#include "vm.h"
 
 #define DIRSIZ 128
 #define ROOT_INO 2
@@ -59,7 +61,9 @@ struct file_operations {
 	int (*close) (struct inode *, struct file *);
 	int (*read) (struct file *, char *, u32, u32 *);
 	int (*write) (struct file *, const char *, u32, u32 *);
+	int (*mmap) (struct file *, struct vm_region *);
 };
+extern const struct file_operations *cdev_ops[]; 
 
 int sys_open(const char* path, int oflag, ...);
 

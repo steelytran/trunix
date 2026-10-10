@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-KOBJS = \
+KOBJS += \
 kernel/unpaged_head.S.o \
 kernel/unpaged_init.c.o \
 kernel/unpaged_paging.c.o \
@@ -39,8 +39,8 @@ kernel/fs.c.o \
 kernel/string.c.o \
 kernel/proc.c.o \
 kernel/switch.S.o \
-kernel/console.c.o \
-kernel/fbdev.c.o \
+drivers/char/console/console.c.o \
+drivers/char/fbdev/fbdev.c.o \
 
 BIN = trunix
 

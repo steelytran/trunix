@@ -16,15 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/vm.h>
+#include <trunix/trunix.h>
+#include <trunix/proc.h>
+#include <trunix/fs.h>
 #include <sys/queue.h>
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
+#include <sys/mman.h>
 #include <string.h>
 #include <stddef.h>
 #include <assert.h>
-
-#include "vm.h"
-#include "trunix.h"
 
 u32 *kpagedir;
 
@@ -49,6 +51,9 @@ void *alloc_pages(void *, u32);
 void free_mem(void *, u32);
 void *kmalloc(u32);
 void kfree(void *);
+
+void *mmap(void *, size_t, int, int, int, long);
+void munmap(void *, size_t);
 
 void *
 alloc_pages(void *addr, u32 sz)
@@ -248,4 +253,46 @@ alloc_pt(u32 *pd, u32 va, u32 pa, u32 len, int flags)
 		pa += 0x1000;
 		va += 0x1000;
 	}
+}
+
+void *
+sys_mmap(void *addr, size_t len, int prot, int flags, int fd, long offset)
+{
+	struct vm_region *mem;
+	struct file *f;
+	struct proc *p = getproc();
+	u32 *pd = p2v(p->cr3);
+	u32 m;
+
+	/*
+	 * if FLAGS & MAP_ANON
+	 *	allocate memory
+	 */
+
+	f = p->ofile[fd];
+
+	if (f == NULL)
+		return -1;
+
+	/*
+	 * if addr != NULL
+	 *	mem.va = nearest page
+	 *	boundary to addr
+	 * else
+	 * 	find free region at
+	 * 	least len bytes long
+	 */
+
+	m = 0x10000;
+
+	len = pg_roundup(len);
+
+	mem->len = len;
+	(*cdev_ops[f->inode->major]->mmap)(f, mem);
+}
+
+void
+sys_munmap(void *, size_t)
+{
+	return;
 }

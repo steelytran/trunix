@@ -279,7 +279,7 @@ write:
 	pushl %ecx
 	pushl %ebx
 	call sys_write
-	addl $4 * 3, %esp
+	addl $3 * 4, %esp
 	movl %eax, (7 * 4)(%esp)
 	jmp end_syscall
 
@@ -288,7 +288,7 @@ open:
 	pushl %ecx
 	pushl %ebx
 	call sys_open
-	addl $4 * 3, %esp
+	addl $3 * 4, %esp
 	movl %eax, (7 * 4)(%esp)
 	jmp end_syscall
 
@@ -303,9 +303,18 @@ execve:
 	pushl %ecx
 	pushl %ebx
 	call sys_execve
-	addl $4 * 3, %esp
+	addl $3 * 4, %esp
 	movl %eax, (7 * 4)(%esp)
 	jmp end_syscall
 
 mmap:
+	pushl %ecx
+	pushl %edx
+	pushl %ebx
+	pushl %ebp
+	pushl %esi
+	pushl %edi
+	call sys_mmap
+	addl $6 * 4, %esp
+	movl %eax, (7 * 4)(%esp)
 	jmp end_syscall

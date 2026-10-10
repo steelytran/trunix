@@ -1,5 +1,5 @@
 /*
- * kernel utilities
+ * console driver
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,39 +16,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <trunix/trunix.h>
-#include <assert.h>
+#ifndef _CONSOLE_H
+#define _CONSOLE_H
 
-__dead void
-abort()
-{
-	for (;;) {
-		cli();
-		hlt();
-	}
-}
+struct console {
+	const void *buf;
+};
 
-__dead void
-panic(const char *msg)
-{
-	char *c;
+int console_open(struct inode *, struct file *);
+int console_close(struct inode *, struct file *);
+int console_read(struct file *file, char *buf, u32, u32 *);
+int console_write(struct file *, const char *, u32, u32 *);
 
-	for (c = "PANIC: "; *c != '\0'; ++c)
-		write_serial(*c);
-
-	for (c = msg; *c != '\0'; ++c)
-		write_serial(*c);
-
-	write_serial('\n');
-
-	abort();
-}
-
-__dead void
-__assert_fail(const char *expr, const char *file, int line, const char *func)
-{
-	printk("Assertation failed: %s (%s: %s: %d)\n",
-	    expr, file, func, line);
-
-	abort();
-}
+#endif

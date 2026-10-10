@@ -18,7 +18,7 @@
 
 #include <stdarg.h>
 
-#include "trunix.h"
+#include <trunix/trunix.h>
 
 void printk(const char *, ...);
 void vprintk(const char *, va_list);

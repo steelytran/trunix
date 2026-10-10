@@ -16,17 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/trunix.h>
+#include <trunix/vm.h>
+#include <trunix/fs.h>
+#include <trunix/proc.h>
 #include <sys/cdefs.h>
 #include <string.h>
 #include <stddef.h>
 #include <assert.h>
 
-#include "trunix.h"
-#include "vm.h"
-#include "file.h"
-#include "proc.h"
-#include "console.h"
-#include "fbdev.h"
+#include "../drivers/char/console/console.h"
+#include "../drivers/char/fbdev/fbdev.h"
 
 extern struct kinfo k;
 
@@ -42,9 +42,10 @@ const struct file_operations fbdev_ops = {
 	.close = fbdev_close,
 	.read = fbdev_read,
 	.write = fbdev_write,
+	.mmap = fbdev_mmap,
 };
 
-static const struct file_operations *cdev_ops[] = {
+const struct file_operations *cdev_ops[] = {
 	[CONSOLE] = &console_ops,
 	[FRAMEBUFFER] = &fbdev_ops,
 };
@@ -165,6 +166,7 @@ found:
 		return -1;
 
 	f = kmalloc(sizeof(struct file));
+	p->ofile[fd] = f;
 	f->inode = &k.ino_tbl[k.dir_tbl[i].inode];
 
 	(*cdev_ops[f->inode->major]->open)(f->inode, f);

@@ -16,18 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/trunix.h>
+#include <trunix/vm.h>
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
 #include <stddef.h>
-
-#include "trunix.h"
-#include "vm.h"
 
 #define FLAGS MULTIBOOT_INFO_MEM_MAP | MULTIBOOT_INFO_FRAMEBUFFER_INFO
 
 struct kinfo k;
 
-struct multiboot_info *
+struct kinfo *
 init_trunix(struct multiboot_info *mb_info, u32 magic)
 {
 	u32 m;

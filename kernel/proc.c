@@ -16,40 +16,26 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/trunix.h>
+#include <trunix/proc.h>
+#include <trunix/vm.h>
+#include <trunix/fs.h>
 #include <sys/queue.h>
 #include <sys/cdefs.h>
 #include <string.h>
 #include <stddef.h>
 #include <assert.h>
 
-#include "trunix.h"
-#include "proc.h"
-#include "vm.h"
-#include "file.h"
-
 #define STACK_SIZE 0x1000
 #define KSTACK_SIZE 0x1000
 #define ELFMAGIC 0x464C457F
 
-#define GETMEMMAP(x) (&memtab[(x)->pid - 1])
+struct proc_mmap *memtab;
 
 extern u32 *kpagedir;
 extern struct task_state_segment tss;
 extern struct kinfo k;
 
-struct mem_map {
-	u32 va;
-	u32 pa;
-	u32 len;
-	SLIST_ENTRY(mem_map) entry;
-};
-
-struct proc_mmap {
-        struct mem_map *slh_first;
-	u32 sz;
-};
-
-static struct proc_mmap *memtab;
 static struct proc *curthread;
 static struct proc *idle;
 
@@ -172,7 +158,7 @@ loadelf(struct proc *p, const char *path)
 	u32 mem, bin, sz;
 	struct elfhdr *elf;
 	struct proghdr *ph;
-	struct mem_map *m;
+	struct vm_region *m;
 	u32 start, end;
 	u32 min = ~0;
 	u32 max = 0;
@@ -219,7 +205,7 @@ found:
 	mem = alloc_pages(NULL, sz);
 	/* assert */
 	memset(mem, 0, sz);
-	m = kmalloc(sizeof(struct mem_map) * (n + 1));
+	m = kmalloc(sizeof(struct vm_region) * (n + 1));
 	GETMEMMAP(p)->sz = sz;
 
 	n = 0;
@@ -404,7 +390,7 @@ sys_fork()
 	int i;
 	u32 *pd;
 	u32 mem;
-	struct mem_map *m1, *m2;
+	struct vm_region *m1, *m2;
 	struct proc *n = proc_create();
 
 	if (n == NULL)
@@ -421,7 +407,7 @@ sys_fork()
 		return -1;
 
 	SLIST_FOREACH(m1, GETMEMMAP(curthread), entry) {
-		m2 = kmalloc(sizeof(struct mem_map));
+		m2 = kmalloc(sizeof(struct vm_region));
 
 		m2->pa = v2p(mem);
 		m2->va = m1->va;
