@@ -28,7 +28,7 @@ static u32 *pagedir = pd;
 extern u32 vm_enable_paging(u32 *);
 
 void pg_clear();
-void pg_identity();
+void pg_identity(struct kinfo *);
 void pg_clear_identity();
 void pg_enable();
 
@@ -114,18 +114,28 @@ pg_clear()
  * memory to the end of the kernel.
  */
 void
-pg_identity()
+pg_identity(struct kinfo *k)
 {
 	u32 i;
+	u32 fb = k->mbi.framebuffer_addr;
+	u32 fbsz = roundup(
+	    k->mbi.framebuffer_pitch * k->mbi.framebuffer_height,
+	    0x400000);
+
+	int fbndx = fb >> 22;
+	int fbndx_end = (fb + fbsz) >> 22;
 
 	for (i = 0; i < 1024; ++i) {
 		pagedir[i] = (i << 22) | PG_PSE | PG_RW | PG_P;
 
 		if (i >= (u32)_kernel_offset >> 22)
 			pagedir[i] =
-			    (i << 22) + (u32)_kernel_offset
+			    ((i << 22) + (u32)_kernel_offset)
 			    | PG_G | PG_PSE | PG_RW | PG_P;
 	}
+
+	for (i = fbndx; i < fbndx_end; ++i)
+		pagedir[i] = (i << 22) | PG_PSE | PG_RW | PG_P | PG_RW;
 }
 
 void

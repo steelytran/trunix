@@ -50,7 +50,6 @@ struct proc_mmap {
 };
 
 static struct proc_mmap *memtab;
-
 static struct proc *curthread;
 static struct proc *idle;
 

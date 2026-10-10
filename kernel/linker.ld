@@ -26,6 +26,9 @@ __k_unpaged__kernel_physical_base = _kernel_physical_base;
 __k_unpaged__kernel_virt_base = _kernel_virt_base;
 __k_unpaged__kernel_offset = _kernel_offset;
 
+__k_unpaged_VGA_TEXT = 0xB8000;
+VGA_TEXT = 0xB8000 + _kernel_offset;
+
 SECTIONS
 {
  	. = _kernel_physical_base;

@@ -21,6 +21,10 @@
 
 #include "file.h"
 
+struct console {
+	const void *buf;
+};
+
 int console_open(struct inode *, struct file *);
 int console_close(struct inode *, struct file *);
 int console_read(struct file *file, char *buf, u32, u32 *);

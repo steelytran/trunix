@@ -26,6 +26,7 @@
 #include "file.h"
 #include "proc.h"
 #include "console.h"
+#include "fbdev.h"
 
 extern struct kinfo k;
 
@@ -36,8 +37,16 @@ const struct file_operations console_ops = {
 	.write = console_write,
 };
 
+const struct file_operations fbdev_ops = {
+	.open = fbdev_open,
+	.close = fbdev_close,
+	.read = fbdev_read,
+	.write = fbdev_write,
+};
+
 static const struct file_operations *cdev_ops[] = {
 	[CONSOLE] = &console_ops,
+	[FRAMEBUFFER] = &fbdev_ops,
 };
 
 static int
@@ -124,6 +133,12 @@ load_initrd()
 	in[i].type = V_CHAR;
 	in[i].major = CONSOLE;
 
+	++i;
+	dir[i].inode = i;
+	strlcpy(dir[i].name, "/dev/fbdev", DIRSIZ);
+	in[i].type = V_CHAR;
+	in[i].major = FRAMEBUFFER;
+
 	k.ino_n = i + 1;
 }
 
@@ -150,10 +165,11 @@ found:
 		return -1;
 
 	f = kmalloc(sizeof(struct file));
-	p->ofile[fd] = f;
 	f->inode = &k.ino_tbl[k.dir_tbl[i].inode];
 
 	(*cdev_ops[f->inode->major]->open)(f->inode, f);
+
+	return fd;
 }
 
 int
@@ -162,12 +178,12 @@ sys_write(int fd, const void *buf, size_t count)
 	struct file *f;
 	struct proc *p = getproc();
 
-
-	printk((char *)buf);
-
-	for (;;);
-
 	f = p->ofile[fd];
+
 	if (f == NULL)
 		return -1;
+
+	(*cdev_ops[f->inode->major]->write)(f, buf, count, 0);
+
+	return 0;
 }

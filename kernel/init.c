@@ -23,7 +23,7 @@
 #include "trunix.h"
 #include "vm.h"
 
-#define FLAGS MULTIBOOT_INFO_MEM_MAP /* | MULTIBOOT_INFO_FRAMEBUFFER_INFO */
+#define FLAGS MULTIBOOT_INFO_MEM_MAP | MULTIBOOT_INFO_FRAMEBUFFER_INFO
 
 struct kinfo k;
 
@@ -72,7 +72,7 @@ init_trunix(struct multiboot_info *mb_info, u32 magic)
 
 	/* setup paging */
 	pg_clear();
-	pg_identity();
+	pg_identity(&k);
 	pg_enable();
 
 	return &k;

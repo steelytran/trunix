@@ -268,6 +268,7 @@ exit:
 
 fork:
 	call sys_fork
+	movl %eax, (7 * 4)(%esp)
 	jmp end_syscall
 
 read:
@@ -279,9 +280,16 @@ write:
 	pushl %ebx
 	call sys_write
 	addl $4 * 3, %esp
+	movl %eax, (7 * 4)(%esp)
 	jmp end_syscall
 
 open:
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+	call sys_open
+	addl $4 * 3, %esp
+	movl %eax, (7 * 4)(%esp)
 	jmp end_syscall
 
 close:
@@ -296,6 +304,7 @@ execve:
 	pushl %ebx
 	call sys_execve
 	addl $4 * 3, %esp
+	movl %eax, (7 * 4)(%esp)
 	jmp end_syscall
 
 mmap:

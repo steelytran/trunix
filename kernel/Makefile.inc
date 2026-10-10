@@ -40,6 +40,7 @@ kernel/string.c.o \
 kernel/proc.c.o \
 kernel/switch.S.o \
 kernel/console.c.o \
+kernel/fbdev.c.o \
 
 BIN = trunix
 

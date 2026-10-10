@@ -26,7 +26,8 @@
 #define MAXFILES 16
 
 enum major_ids { 
-	CONSOLE
+	CONSOLE,
+	FRAMEBUFFER,
 };
 
 struct dirent {
@@ -37,6 +38,7 @@ struct dirent {
 struct file {
 	struct file_operations *ops;
 	struct inode *inode;
+	void *data;
 };
 
 struct inode {

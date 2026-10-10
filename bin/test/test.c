@@ -17,12 +17,18 @@
  */
 
 #include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 
 int
 main(void)
 {
-	const char buf[] = "asdfasdfsadf\n";
-	write(1, buf, strlen(buf));
+	int fd;
+	static char buf[0x100];
+
+	fd = open("/dev/fbdev", 0);
+
+	memset(buf, 123, 0x100);
+	write(fd, buf, 0x100);
 	for (;;);
 }

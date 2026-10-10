@@ -1,5 +1,5 @@
 /*
- * console driver
+ * framebuffer driver
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,40 +16,39 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stddef.h>
+#ifndef _FBDEV_H
+#define _FBDEV_H
 
-#include "vm.h"
+#include <sys/cdefs.h>
+
 #include "file.h"
-#include "console.h"
 
-extern struct kinfo k;
-extern char VGA_TEXT[];
+struct fbdev {
+	u64 addr;
+	u32 pitch;
+	u32 width;
+	u32 height;
+	u8 bpp;
+	u8 type;
+	union {
+		struct {
+			u32 palette_addr;
+			u16 palette_num_colors;
+		};
+		struct {
+			u8 red_field_position;
+			u8 red_mask_size;
+			u8 green_field_position;
+			u8 green_mask_size;
+			u8 blue_field_position;
+			u8 blue_mask_size;
+		};
+	};
+};
 
-int
-console_open(struct inode *inode, struct file *file)
-{
-	if (file->data == NULL) {
-		file->data = kmalloc(sizeof(struct console));
-		((struct console *)file->data)->buf = alloc_pages(NULL, 0x1000);
-	}
+int fbdev_open(struct inode *, struct file *);
+int fbdev_close(struct inode *, struct file *);
+int fbdev_read(struct file *file, char *buf, u32, u32 *);
+int fbdev_write(struct file *, const char *, u32, u32 *);
 
-	return 0;
-}
-
-int
-console_close(struct inode *inode, struct file *file)
-{
-	return -1;
-}
-
-int
-console_read(struct file *file, char *buf, u32 sz, u32 *off)
-{
-	return -1;
-}
-
-int
-console_write(struct file *file, const char *buf, u32 sz, u32 *off)
-{
-	return -1;
-}
+#endif

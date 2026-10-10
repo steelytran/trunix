@@ -19,7 +19,7 @@
 #define ASM_FILE
 #include <sys/multiboot.h>
 
-#define FLAGS (MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO /* | MULTIBOOT_VIDEO_MODE */)
+#define FLAGS (MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_VIDEO_MODE)
 
 .section .multiboot
 	.align 4

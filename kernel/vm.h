@@ -53,7 +53,7 @@ void add_memmap(struct kinfo *, u64, u64);
 void cut_memmap(struct kinfo *, u32, u32);
 
 void pg_clear();
-void pg_identity();
+void pg_identity(struct kinfo *);
 void pg_clear_identity();
 void pg_enable();
 
