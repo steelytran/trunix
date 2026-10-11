@@ -19,12 +19,15 @@
 #ifndef _TRUNIX_PROC_H
 #define _TRUNIX_PROC_H
 
-#include <trunix/fs.h>
-#include <trunix/vm.h>
 #include <sys/queue.h>
-#include <sys/cdefs.h>
 
 #define NOKTHREAD
+
+#define STACK_SIZE 0x1000
+#define KSTACK_SIZE 0x1000
+#define MAXFILES 16
+
+#define MMAP_BASE (KERNEL_OFFSET - STACK_SIZE)
 
 struct trapframe {
 /* in order of pushal instruction */

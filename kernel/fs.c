@@ -143,6 +143,27 @@ load_initrd()
 	k.ino_n = i + 1;
 }
 
+struct file *
+file_open(const char *path)
+{
+	int i;
+	struct file *f;
+
+	for (i = ROOT_INO; i < k.ino_n; ++i)
+		if (strcmp(path, k.dir_tbl[i].name) == 0)
+			goto found;
+
+	return NULL;
+
+found:
+	f = kmalloc(sizeof(struct file));
+	assert(f != NULL);
+	f->inode = &k.ino_tbl[k.dir_tbl[i].inode];
+
+	(*cdev_ops[f->inode->major]->open)(f->inode, f);
+	return f;
+}
+
 int
 sys_open(const char* path, int oflag, ...)
 {

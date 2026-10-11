@@ -1,5 +1,5 @@
 /*
- * framebuffer driver
+ * c standard definitions
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,40 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _FBDEV_H
-#define _FBDEV_H
+#ifndef _STDDEF_H
+#define _STDDEF_H
 
-#include <sys/cdefs.h>
-
-#include "file.h"
-
-struct fbdev {
-	u32 addr;
-	u32 pitch;
-	u32 width;
-	u32 height;
-	u8 bpp;
-	u8 type;
-	union {
-		struct {
-			u32 palette_addr;
-			u16 palette_num_colors;
-		};
-		struct {
-			u8 red_field_position;
-			u8 red_mask_size;
-			u8 green_field_position;
-			u8 green_mask_size;
-			u8 blue_field_position;
-			u8 blue_mask_size;
-		};
-	};
-};
-
-int fbdev_open(struct inode *, struct file *);
-int fbdev_close(struct inode *, struct file *);
-int fbdev_read(struct file *file, char *buf, u32, u32 *);
-int fbdev_write(struct file *, const char *, u32, u32 *);
-int fbdev_mmap(struct file *, struct vm_region *);
+#define __NEED_NULL
+#define __NEED_size_t
+#include <trunix/types.h>
 
 #endif

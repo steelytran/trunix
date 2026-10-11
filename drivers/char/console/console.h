@@ -19,13 +19,21 @@
 #ifndef _CONSOLE_H
 #define _CONSOLE_H
 
+#include <sys/types.h>
+
+struct fbdev;
+struct file;
+struct inode;
+
 struct console {
 	const void *buf;
+	struct fbdev *fb;
 };
 
 int console_open(struct inode *, struct file *);
 int console_close(struct inode *, struct file *);
-int console_read(struct file *file, char *buf, u32, u32 *);
-int console_write(struct file *, const char *, u32, u32 *);
+ssize_t console_read(struct file *file, char *buf, size_t, loff_t *);
+ssize_t console_write(struct file *, const char *, size_t, loff_t *);
+
 
 #endif

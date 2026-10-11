@@ -19,11 +19,11 @@
 #ifndef _TRUNIX_VM_H
 #define _TRUNIX_VM_H
 
-#include <sys/multiboot.h>
-#include <sys/cdefs.h>
-#include <sys/queue.h>
+#define __NEED_u32
+#define __NEED_u64
+#include <trunix/types.h>
 
-#include "trunix.h"
+#include <sys/queue.h>
 
 #define v2p(x) ((u32)(x) & ~KERNEL_OFFSET)
 #define p2v(x) ((u32)(x) | KERNEL_OFFSET)
@@ -44,6 +44,8 @@ extern char _kernel_unpaged_end[];
 extern char _kernel_virt_base[];
 extern char _kernel_size[];
 extern char _kernel_offset[];
+
+struct kinfo;
 
 struct vm_region {
 	u32 va;

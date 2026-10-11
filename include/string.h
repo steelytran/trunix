@@ -19,7 +19,9 @@
 #ifndef _STRING_H
 #define _STRING_H
 
-#include <stddef.h>
+#define __NEED_NULL
+#define __NEED_size_t
+#include <trunix/types.h>
 
 void *memccpy(void *, const void *, int, size_t);
 void *memchr(const void *, int, size_t);

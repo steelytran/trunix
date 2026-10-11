@@ -22,11 +22,11 @@ OBJCOPY = llvm-objcopy
 GRUB = i686-elf-grub
 
 ASFLAGS = $(INCLUDE) $(TARGET)
-CFLAGS = -static -std=c99 -ffreestanding -nostdlib \
--g3 -glldb -fno-pic -fno-pie -fno-builtin -mno-mmx \
--mno-sse -mno-sse2 -mno-3dnow -fno-strict-aliasing \
--Wno-pointer-integer-compare -Wno-int-conversion \
--fno-stack-protector -mstack-alignment=4 -mgeneral-regs-only \
+CFLAGS = -ffreestanding -nostdlib -nobuiltininc -fno-builtin \
+-fno-strict-aliasing -fno-stack-protector -fno-pic -fno-pie \
+-mno-sse -mno-sse2 -mno-3dnow -mstack-alignment=4 -mno-mmx \
+-mgeneral-regs-only -Wno-pointer-integer-compare -Wno-int-conversion \
+-Wno-incompatible-function-pointer-types -g3 -glldb -static -std=c99 \
 $(INCLUDE) $(TARGET) 
 
 INCLUDE = -isystem include

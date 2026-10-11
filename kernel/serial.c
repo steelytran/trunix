@@ -16,12 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/trunix.h>
 #include <stdarg.h>
 
-#include <trunix/trunix.h>
-
 void printk(const char *, ...);
-void vprintk(const char *, va_list);
 
 char *
 itoa(int n, unsigned base)
@@ -66,20 +64,11 @@ itoa(int n, unsigned base)
 void
 printk(const char *fmt, ...)
 {
+	char *c;
+	int base;
 	va_list args;
 
 	va_start(args, fmt);
-	vprintk(fmt, args);
-	va_end(args);
-}
-
-
-void
-vprintk(const char *fmt, va_list args)
-{
-	char *c;
-	int base;
-
 	for (; *fmt != '\0'; ++fmt) {
 		if (*fmt == '%') {
 			++fmt;
@@ -122,4 +111,5 @@ flush:
 		}
 		write_serial(*fmt);
 	}
+	va_end(args);
 }

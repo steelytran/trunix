@@ -23,9 +23,4 @@
 #define __packed __attribute__((__packed__))
 #define __aligned(x) __attribute__((__aligned__(x)))
 
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned int u32;
-typedef unsigned long long u64;
-
 #endif

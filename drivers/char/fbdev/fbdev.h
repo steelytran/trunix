@@ -19,8 +19,13 @@
 #ifndef _FBDEV_H
 #define _FBDEV_H
 
-#include <sys/cdefs.h>
+#define __NEED_u8
+#define __NEED_u16
+#define __NEED_u32
+#include <trunix/types.h>
+
 #include <trunix/fs.h>
+#include <sys/types.h>
 
 struct fbdev {
 	u32 addr;
@@ -47,8 +52,8 @@ struct fbdev {
 
 int fbdev_open(struct inode *, struct file *);
 int fbdev_close(struct inode *, struct file *);
-int fbdev_read(struct file *file, char *buf, u32, u32 *);
-int fbdev_write(struct file *, const char *, u32, u32 *);
+ssize_t fbdev_read(struct file *file, char *buf, size_t, loff_t *);
+ssize_t fbdev_write(struct file *, const char *, size_t, loff_t *);
 int fbdev_mmap(struct file *, struct vm_region *);
 
 #endif

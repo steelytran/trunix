@@ -17,17 +17,13 @@
  */
 
 #include <unistd.h>
-#include <stddef.h>
+#include <string.h>
 
 int
 main(void)
 {
-	int pid;
- 
-	if ((pid = fork()) == 0)
-		execve("/bin/test", NULL, NULL);
-	if (pid == -1)
-		return -1; /* failed */
+	const char buf[] = "Welcome to Trunix";
+	write(STDOUT_FILENO, buf, strlen(buf));
 
-	for (;;);
+	return 0;
 }

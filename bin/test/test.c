@@ -24,9 +24,14 @@
 int
 main(void)
 {
+	unsigned long i;
+
 	char *fb;
 	int fd;
 
 	fd = open("/dev/fbdev", 0);
-	/* fb = mmap(NULL, 0x10000, 0, 0, 0, 0); */
+	fb = mmap(NULL, 0xF000, 0, 0, fd, 0);
+
+	for (i = 0; i < 0xF000; ++i)
+		fb[i] = i;
 }

@@ -19,8 +19,6 @@
 #ifndef _FCNTL_H
 #define _FCNTL_H
 
-#include <stdarg.h>
-
 int open(const char *, int, ...);
 
 #endif

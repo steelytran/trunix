@@ -16,13 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/fs.h>
 #include <trunix/vm.h>
 #include <trunix/trunix.h>
 #include <trunix/proc.h>
-#include <trunix/fs.h>
 #include <sys/queue.h>
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
+#include <sys/types.h>
 #include <sys/mman.h>
 #include <string.h>
 #include <stddef.h>
@@ -52,7 +53,7 @@ void free_mem(void *, u32);
 void *kmalloc(u32);
 void kfree(void *);
 
-void *mmap(void *, size_t, int, int, int, long);
+void *mmap(void *, size_t, int, int, int, off_t);
 void munmap(void *, size_t);
 
 void *
@@ -256,7 +257,7 @@ alloc_pt(u32 *pd, u32 va, u32 pa, u32 len, int flags)
 }
 
 void *
-sys_mmap(void *addr, size_t len, int prot, int flags, int fd, long offset)
+sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 {
 	struct vm_region *mem;
 	struct file *f;
@@ -274,6 +275,8 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, long offset)
 	if (f == NULL)
 		return -1;
 
+	len = pg_roundup(len);
+
 	/*
 	 * if addr != NULL
 	 *	mem.va = nearest page
@@ -282,17 +285,32 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, long offset)
 	 * 	find free region at
 	 * 	least len bytes long
 	 */
-
-	m = 0x10000;
+	SLIST_FOREACH(mem, GETMEMMAP(p), entry)
+		if (mem->va + mem->len >= MMAP_BASE - len &&
+		    MMAP_BASE > mem->va)
+			return -1; /* temporary */
 
 	len = pg_roundup(len);
+	mem = kmalloc(sizeof(struct vm_region));
 
+	mem->va = MMAP_BASE - len;
 	mem->len = len;
+
 	(*cdev_ops[f->inode->major]->mmap)(f, mem);
+
+	alloc_pt(pd,
+	    mem->va,
+	    mem->pa,
+	    mem->len,
+	    PG_US | PG_RW | PG_P);
+
+	SLIST_INSERT_HEAD(GETMEMMAP(p), mem, entry);
+
+	return mem->va;
 }
 
 void
-sys_munmap(void *, size_t)
+sys_munmap(void *addr, size_t len)
 {
 	return;
 }

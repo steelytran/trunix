@@ -19,14 +19,15 @@
 #ifndef _TRUNIX_TRUNIX_H
 #define _TRUNIX_TRUNIX_H
 
+#define __NEED_u8
+#define __NEED_u16
+#define __NEED_u32
+#include <trunix/types.h>
 #include <sys/multiboot.h>
 #include <sys/cdefs.h>
-#include <stdarg.h>
 
 #define kmain __k_unpaged_kmain
-
 #define MAXMEMMAP 32
-
 #define cli() __asm__ volatile("cli")
 #define sti() __asm__ volatile("sti")
 #define hlt() __asm__ volatile("hlt")
@@ -86,7 +87,6 @@ void init_serial();
 u8 read_serial();
 void write_serial(u8);
 void printk(const char *, ...);
-void vprintk(const char *, va_list);
 
 void init_gdt();
 void init_tss();

@@ -19,13 +19,15 @@
 #ifndef _TRUNIX_FS_H
 #define _TRUNIX_FS_H
 
-#include <sys/cdefs.h>
+#define __NEED_u8
+#define __NEED_u16
+#define __NEED_u32
+#include <trunix/types.h>
 
-#include "vm.h"
+#include <sys/types.h>
 
 #define DIRSIZ 128
 #define ROOT_INO 2
-#define MAXFILES 16
 
 enum major_ids { 
 	CONSOLE,
@@ -57,14 +59,15 @@ struct inode {
 };
 
 struct file_operations {
-	int (*open) (struct inode *, struct file *);
-	int (*close) (struct inode *, struct file *);
-	int (*read) (struct file *, char *, u32, u32 *);
-	int (*write) (struct file *, const char *, u32, u32 *);
-	int (*mmap) (struct file *, struct vm_region *);
+	int (*open)(struct inode *, struct file *);
+	int (*close)(struct inode *, struct file *);
+	ssize_t (*read)(struct file *, char *, size_t, loff_t *);
+	ssize_t (*write)(struct file *, const char *, size_t, loff_t *);
+	int (*mmap)(struct file *, struct vm_region *);
 };
 extern const struct file_operations *cdev_ops[]; 
 
-int sys_open(const char* path, int oflag, ...);
+int sys_open(const char*, int, ...);
+struct file *file_open(const char *);
 
 #endif

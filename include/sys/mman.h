@@ -19,7 +19,8 @@
 #ifndef _SYS_MMAN_H
 #define _SYS_MMAN_H
 
-#include <stddef.h>
+#define __NEED_size_t
+#include <trunix/types.h>
 
 void *mmap(void *, size_t, int, int, int, long);
 void munmap(void *, size_t);

@@ -26,8 +26,6 @@
 #include <stddef.h>
 #include <assert.h>
 
-#define STACK_SIZE 0x1000
-#define KSTACK_SIZE 0x1000
 #define ELFMAGIC 0x464C457F
 
 struct proc_mmap *memtab;
@@ -310,8 +308,10 @@ initsys()
 	curthread->pid = pid++;
 
 	assert(curthread != NULL);
-	assert(loadelf(curthread, "/sbin/init") >= 0);
-	sys_open("/dev/console", 0);
+	assert(!(loadelf(curthread, "/sbin/init") < 0));
+	sys_open("/dev/console", 0); /* stdin */
+	sys_open("/dev/console", 0); /* stdout */
+	sys_open("/dev/console", 0); /* stderr */
 
 	enqueue(curthread);
 }

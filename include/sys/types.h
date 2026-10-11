@@ -1,5 +1,5 @@
 /*
- * console driver
+ * types
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,18 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _CONSOLE_H
-#define _CONSOLE_H
+#ifndef _SYS_TYPES_H
+#define _SYS_TYPES_H
 
-#include "file.h"
-
-struct console {
-	const void *buf;
-};
-
-int console_open(struct inode *, struct file *);
-int console_close(struct inode *, struct file *);
-int console_read(struct file *file, char *buf, u32, u32 *);
-int console_write(struct file *, const char *, u32, u32 *);
+#define __NEED_ssize_t
+#define __NEED_pid_t
+#define __NEED_off_t
+#define __NEED_loff_t
+#include <trunix/types.h>
 
 #endif
