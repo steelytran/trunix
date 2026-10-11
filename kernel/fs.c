@@ -25,8 +25,8 @@
 #include <stddef.h>
 #include <assert.h>
 
-#include "../drivers/char/console/console.h"
-#include "../drivers/char/fbdev/fbdev.h"
+#include "../drivers/video/console/console.h"
+#include "../drivers/video/fbdev/fbdev.h"
 
 extern struct kinfo k;
 

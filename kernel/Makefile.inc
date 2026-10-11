@@ -39,8 +39,10 @@ kernel/fs.c.o \
 kernel/string.c.o \
 kernel/proc.c.o \
 kernel/switch.S.o \
-drivers/char/console/console.c.o \
-drivers/char/fbdev/fbdev.c.o \
+drivers/video/console/console.c.o \
+drivers/video/fbdev/fbdev.c.o \
+drivers/video/console/misc-fixed-8x13B.c.o \
+drivers/video/console/unifont-8x16.c.o \
 
 BIN = trunix
 
