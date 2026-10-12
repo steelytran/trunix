@@ -1,5 +1,5 @@
 /*
- * console driver
+ * fbcon driver
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -30,18 +30,24 @@ struct fbdev;
 struct file;
 struct inode;
 
+struct font {
+	int w;
+	int h;
+	void *bitmap;
+};
+
 extern const u8 misc_fixed_8x13B[128][13]; 
 extern const u8 unifont_8x16[128][16];
 
-struct console {
+struct fbcon {
 	const void *buf;
 	struct fbdev *fb;
 };
 
-int console_open(struct inode *, struct file *);
-int console_close(struct inode *, struct file *);
-ssize_t console_read(struct file *file, char *buf, size_t, loff_t *);
-ssize_t console_write(struct file *, const char *, size_t, loff_t *);
+int fbcon_open(struct inode *, struct file *);
+int fbcon_close(struct inode *, struct file *);
+ssize_t fbcon_read(struct file *file, char *buf, size_t, loff_t *);
+ssize_t fbcon_write(struct file *, const char *, size_t, loff_t *);
 
 
 #endif

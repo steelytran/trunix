@@ -22,7 +22,7 @@
 int
 main(void)
 {
-	const char buf[] = "Welcome to Trunix";
+	const char buf[] = "Welcome2Trunix";
 	write(STDOUT_FILENO, buf, strlen(buf));
 
 	return 0;

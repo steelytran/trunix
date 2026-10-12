@@ -25,16 +25,16 @@
 #include <stddef.h>
 #include <assert.h>
 
-#include "../drivers/video/console/console.h"
+#include "../drivers/video/fbcon/fbcon.h"
 #include "../drivers/video/fbdev/fbdev.h"
 
 extern struct kinfo k;
 
-const struct file_operations console_ops = {
-	.open = console_open,
-	.close = console_close,
-	.read = console_read,
-	.write = console_write,
+const struct file_operations fbcon_ops = {
+	.open = fbcon_open,
+	.close = fbcon_close,
+	.read = fbcon_read,
+	.write = fbcon_write,
 };
 
 const struct file_operations fbdev_ops = {
@@ -46,7 +46,7 @@ const struct file_operations fbdev_ops = {
 };
 
 const struct file_operations *cdev_ops[] = {
-	[CONSOLE] = &console_ops,
+	[CONSOLE] = &fbcon_ops,
 	[FRAMEBUFFER] = &fbdev_ops,
 };
 
@@ -181,10 +181,8 @@ sys_open(const char* path, int oflag, ...)
 
 found:
 	for (fd = 0; p->ofile[fd] != NULL; ++fd)
-		;
-
-	if (fd == MAXFILES)
-		return -1;
+		if (fd >= MAXFILES)
+			return -1;
 
 	f = kmalloc(sizeof(struct file));
 	p->ofile[fd] = f;
