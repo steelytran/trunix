@@ -64,6 +64,7 @@ struct file_operations {
 	ssize_t (*read)(struct file *, char *, size_t, loff_t *);
 	ssize_t (*write)(struct file *, const char *, size_t, loff_t *);
 	int (*mmap)(struct file *, struct vm_region *);
+	int (*ioctl)(struct inode *, struct file *, int, void *);
 };
 extern const struct file_operations *cdev_ops[]; 
 

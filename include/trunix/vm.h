@@ -73,7 +73,7 @@ void flush_tlb();
 void init_mem(struct kinfo *k);
 void alloc_pt(u32 *, u32, u32, u32, int);
 
-void *alloc_pages(void *, u32);
+void *alloc_pages(u32);
 void free_pages(void *, u32);
 void *kmalloc(u32);
 void kfree(void *);

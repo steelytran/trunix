@@ -48,7 +48,7 @@ static struct slob heap = SLIST_HEAD_INITIALIZER(heap);
 void init_mem(struct kinfo *);
 u32 *copykvm();
 void alloc_pt(u32 *, u32, u32, u32, int);
-void *alloc_pages(void *, u32);
+void *alloc_pages(u32);
 void free_mem(void *, u32);
 void *kmalloc(u32);
 void kfree(void *);
@@ -57,26 +57,23 @@ void *mmap(void *, size_t, int, int, int, off_t);
 void munmap(void *, size_t);
 
 void *
-alloc_pages(void *addr, u32 sz)
+alloc_pages(u32 sz)
 {
+	void *addr;
 	struct block *p, *s;
 
-	if (addr == NULL) {
-		LIST_FOREACH(p, &freelist, entry)
-			if (p->sz >= sz)
-				goto found;
+	LIST_FOREACH(p, &freelist, entry)
+		if (p->sz >= sz)
+			goto found;
 
-		return NULL;
+	return NULL;
 
 found:
-		addr = p;
-	} else
-		panic("until mapping specific addresses is implemented");
-
+	addr = p;
 	sz = pg_roundup(sz);
 
 	LIST_REMOVE(p, entry);
-	/* reinsert split block */
+	/* split block */
 	if (p->sz > sz)
 		free_pages((u8 *)p + sz, p->sz - sz);
 
@@ -202,7 +199,7 @@ init_mem(struct kinfo *k)
 	}
 
 	/* fixed kernel heap size of 64 KiB for now */
-	sb = alloc_pages(NULL, 0x10000);
+	sb = alloc_pages(0x10000);
 	sb->sz = 0x10000;
 
 	SLIST_INIT(&heap);
@@ -215,7 +212,7 @@ init_mem(struct kinfo *k)
 u32 *
 copykvm()
 {
-	u32 *pd = alloc_pages(NULL, 0x1000);
+	u32 *pd = alloc_pages(0x1000);
 
 	memsetl(pd, 0, 1024);
 
@@ -241,7 +238,7 @@ alloc_pt(u32 *pd, u32 va, u32 pa, u32 len, int flags)
 		pte = (va >> 12) & 0x3FF;
 
 		if (!(pd[pde] & 1)) {
-			pt = alloc_pages(NULL, 0x1000);
+			pt = alloc_pages(0x1000);
 			memsetl(pt, 0, 1024);
 			pd[pde] = (v2p(pt) & 0xFFFFF000) | flags;
 		} else {
@@ -275,8 +272,6 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 	if (f == NULL)
 		return -1;
 
-	len = pg_roundup(len);
-
 	/*
 	 * if addr != NULL
 	 *	mem.va = nearest page
@@ -285,15 +280,13 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 	 * 	find free region at
 	 * 	least len bytes long
 	 */
-	SLIST_FOREACH(mem, GETMEMMAP(p), entry)
-		if (mem->va + mem->len >= MMAP_BASE - len &&
-		    MMAP_BASE > mem->va)
-			return -1; /* temporary */
 
 	len = pg_roundup(len);
-	mem = kmalloc(sizeof(struct vm_region));
+	if (p->mmap_base + len >= MMAP_LIMIT)
+		return NULL;
 
-	mem->va = MMAP_BASE - len;
+	mem = kmalloc(sizeof(struct vm_region));
+	mem->va = p->mmap_base += len;
 	mem->len = len;
 
 	(*cdev_ops[f->inode->major]->mmap)(f, mem);

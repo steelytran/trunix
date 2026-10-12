@@ -35,7 +35,7 @@
 #define CELL_W (FONT_W * SCALE)
 #define CELL_H (FONT_H * SCALE)
 
-#define COORD(x, y, pitch, bpp) ((y) * (pitch) + (x) * ((bpp) / 8))
+#define COORD(fb, x, y) (((u8 *)(fb)->addr) + ((y) * (fb)->pitch + (x) * ((fb)->bpp / 8)))
 
 extern struct kinfo k;
 
@@ -66,7 +66,7 @@ fbconchar(int xpos, int ypos, char c)
 
 			for (sx = px; sx < px + SCALE; ++sx)
 				for (sy = py; sy < py + SCALE; ++sy) {
-					pixel = scr + COORD(sx, sy, fb->pitch, fb->bpp);
+					pixel = COORD(fb, sx, sy);
 
 					if (FONT[c][y] & (1 << ((FONT_W - 1) - (x % FONT_W))))
 						*pixel = ~0;
@@ -82,8 +82,8 @@ fbcon_open(struct inode *inode, struct file *file)
 	struct file *fb;
 
 	file->data = kmalloc(sizeof(struct fbcon));
-	((struct fbcon *)file->data)->buf = alloc_pages(NULL, 0x1000);
-	fb = file_open("/dev/fbdev");
+	((struct fbcon *)file->data)->buf = alloc_pages(0x1000);
+	fb = file_open("/dev/fb");
 	assert(fb != NULL);
 	((struct fbcon *)file->data)->fb = fb->data;
 

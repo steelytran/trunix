@@ -105,7 +105,7 @@ alloc_thread()
 	u32 kstack;
 	u32 sp;
 
-	kstack = alloc_pages(NULL, KSTACK_SIZE);
+	kstack = alloc_pages(KSTACK_SIZE);
 	assert(kstack != NULL);
 	memset(kstack, 0, KSTACK_SIZE);
 	p = (struct proc *)(kstack + KSTACK_SIZE - sizeof(*p));
@@ -198,9 +198,9 @@ found:
 		if (end > max)
 			max = pg_roundup(end);
 	}
-
+	p->mmap_base = max;
 	sz = pg_roundup(max - min + STACK_SIZE);
-	mem = alloc_pages(NULL, sz);
+	mem = alloc_pages(sz);
 	/* assert */
 	memset(mem, 0, sz);
 	m = kmalloc(sizeof(struct vm_region) * (n + 1));
@@ -293,7 +293,7 @@ init_pmm()
 {
 	int i;
 
-	memtab = alloc_pages(NULL, sizeof(struct proc_mmap) * 128);
+	memtab = alloc_pages(sizeof(struct proc_mmap) * 128);
 	assert(memtab != NULL);
 
 	for (i = 0; i < 128; ++i)
@@ -398,7 +398,7 @@ sys_fork()
 
 	n->pid = pid++;
 
-	mem = alloc_pages(NULL, GETMEMMAP(curthread)->sz);
+	mem = alloc_pages(GETMEMMAP(curthread)->sz);
 	if (mem == NULL)
 		return -1;
 

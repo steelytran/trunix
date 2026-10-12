@@ -16,14 +16,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <sys/mman.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 
 int
 main(void)
 {
-	const char buf[] = "Welcome2Trunix";
-	write(STDOUT_FILENO, buf, strlen(buf));
+	unsigned int i, j;
+	unsigned int *fb;
+	int fd;
+
+	fd = open("/dev/fb", 0, 0);
+	fb = mmap(NULL, 1280 * 800 * 32, 0, 0, fd, 0);
 
 	return 0;
 }

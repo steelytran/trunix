@@ -27,7 +27,7 @@
 #define KSTACK_SIZE 0x1000
 #define MAXFILES 16
 
-#define MMAP_BASE (KERNEL_OFFSET - STACK_SIZE)
+#define MMAP_LIMIT (KERNEL_OFFSET - STACK_SIZE)
 
 struct trapframe {
 /* in order of pushal instruction */
@@ -66,6 +66,7 @@ struct proc {
 	int pid;
 	u32 cr3;
 	u32 kstack;
+	u32 mmap_base;
 
 	struct context *context;
 	struct trapframe *tf;

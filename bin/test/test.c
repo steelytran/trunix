@@ -29,7 +29,7 @@ main(void)
 	char *fb;
 	int fd;
 
-	fd = open("/dev/fbdev", 0);
+	fd = open("/dev/fb", 0);
 	fb = mmap(NULL, 0xF000, 0, 0, fd, 0);
 
 	for (i = 0; i < 0xF000; ++i)

@@ -33,6 +33,7 @@ int fbdev_close(struct inode *, struct file *);
 ssize_t fbdev_read(struct file *file, char *buf, size_t, loff_t *);
 ssize_t fbdev_write(struct file *, const char *, size_t, loff_t *);
 int fbdev_mmap(struct file *, struct vm_region *);
+int fbdev_ioctl(struct inode *, struct file *, int, void *);
 
 int
 fbdev_open(struct inode *inode, struct file *file)

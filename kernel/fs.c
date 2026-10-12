@@ -76,8 +76,8 @@ load_initrd()
 	u8 *p = tar;
 	unsigned int i = ROOT_INO;
 
-	struct inode *in = alloc_pages(NULL, 0x2000);
-	struct dirent *dir = alloc_pages(NULL, 0x2000);
+	struct inode *in = alloc_pages(0x2000);
+	struct dirent *dir = alloc_pages(0x2000);
 
 	k.ino_tbl = in;
 	k.dir_tbl = dir;
@@ -97,6 +97,7 @@ load_initrd()
 
 		switch (p[156]) {
 		case '0': /* FALLTHROUGH */
+		case '\0': /* FALLTHROUGH */
 		case '1':
 			in[i].type = V_FILE;
 			break;
@@ -117,30 +118,16 @@ load_initrd()
 			break;
 		}
 
-		in[i].major = oct2int(&p[329], 7);
-		/* in[i].minor = oct2int(&p[337], 7); */
+		in[i].major = oct2int(&p[329], 6);
 
 		if (in[i].size > 0)
 			in[i].addr = &p[512];
 		else
 			in[i].addr = 0;
 
-
 		++i;
 	}
-
-	dir[i].inode = i;
-	strlcpy(dir[i].name, "/dev/console", DIRSIZ);
-	in[i].type = V_CHAR;
-	in[i].major = CONSOLE;
-
-	++i;
-	dir[i].inode = i;
-	strlcpy(dir[i].name, "/dev/fbdev", DIRSIZ);
-	in[i].type = V_CHAR;
-	in[i].major = FRAMEBUFFER;
-
-	k.ino_n = i + 1;
+	k.ino_n = i;
 }
 
 struct file *
