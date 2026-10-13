@@ -24,7 +24,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "fbcon.h"
+#include "console.h"
 #include "../fbdev/fbdev.h"
 
 /* hopefully a very temporary solution... */
@@ -35,7 +35,8 @@
 #define CELL_W (FONT_W * SCALE)
 #define CELL_H (FONT_H * SCALE)
 
-#define COORD(fb, x, y) (((u8 *)(fb)->addr) + ((y) * (fb)->pitch + (x) * ((fb)->bpp / 8)))
+#define COORD(fb, x, y)\
+    (((u8 *)(fb)->addr) + ((y) * (fb)->pitch + (x) * ((fb)->bpp / 8)))
 
 extern struct kinfo k;
 
@@ -59,21 +60,21 @@ fbconchar(int xpos, int ypos, char c)
 
 	scr = fb->addr;
 
-	for (y = 0; y < FONT_H; ++y) 
-		for (x = 0; x < FONT_W; ++x) {
-			px = SCALE * x + xpos * CELL_W;
-			py = SCALE * y + ypos * CELL_H;
+	for (y = 0; y < FONT_H; ++y)
+	for (x = 0; x < FONT_W; ++x) {
+		px = SCALE * x + xpos * CELL_W;
+		py = SCALE * y + ypos * CELL_H;
 
-			for (sx = px; sx < px + SCALE; ++sx)
-				for (sy = py; sy < py + SCALE; ++sy) {
-					pixel = COORD(fb, sx, sy);
+		for (sx = px; sx < px + SCALE; ++sx)
+		for (sy = py; sy < py + SCALE; ++sy) {
+			pixel = COORD(fb, sx, sy);
 
-					if (FONT[c][y] & (1 << ((FONT_W - 1) - (x % FONT_W))))
-						*pixel = ~0;
-					else
-						*pixel = 0;
-				}
+			if (FONT[c][y] & (1 << ((FONT_W - 1) - (x % FONT_W))))
+				*pixel = ~0;
+			else
+				*pixel = 0;
 		}
+	}
 }
 
 int
@@ -81,11 +82,11 @@ fbcon_open(struct inode *inode, struct file *file)
 {
 	struct file *fb;
 
-	file->data = kmalloc(sizeof(struct fbcon));
-	((struct fbcon *)file->data)->buf = alloc_pages(0x1000);
+	file->data = kmalloc(sizeof(struct console));
+	((struct console *)file->data)->buf = alloc_pages(0x1000);
 	fb = file_open("/dev/fb");
 	assert(fb != NULL);
-	((struct fbcon *)file->data)->fb = fb->data;
+	((struct console *)file->data)->fb = fb->data;
 
 	return 0;
 }
@@ -113,7 +114,7 @@ fbcon_write(struct file *file, const char *buf, size_t sz, loff_t *off)
 	if (file->data == NULL)
 		return -1;
 
-	fb = ((struct fbcon *)file->data)->fb;
+	fb = ((struct console *)file->data)->fb;
 
 	cols = fb->width / CELL_W;
 	rows = fb->height / CELL_H;
@@ -123,7 +124,7 @@ fbcon_write(struct file *file, const char *buf, size_t sz, loff_t *off)
 			++y;
 			x = 0;
 		} else if (buf[i] == '\b' && x > 0)
-				--x;
+			--x;
 		else
 			fbconchar(x++, y, buf[i]);
 	}

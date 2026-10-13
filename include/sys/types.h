@@ -23,6 +23,7 @@
 #define __NEED_pid_t
 #define __NEED_off_t
 #define __NEED_loff_t
+#define __NEED_dev_t
 #include <trunix/types.h>
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * serial logging
+ * formatted print - vfprintf
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -19,9 +19,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-void
+extern char *itoa(int, unsigned);
+
+int
 vfprintf(FILE *stream, const char *fmt, va_list args)
 {
+	int ret;
 	char *c;
 	int base;
 	for (; *fmt != '\0'; ++fmt) {
@@ -30,13 +33,13 @@ vfprintf(FILE *stream, const char *fmt, va_list args)
 			if (*fmt == '\0')
 				break;
 			if (*fmt == '%') {
-				//write_serial(*fmt);
+				*stream->_ptr++ = *fmt;
 				continue;
 			} if (*fmt == 's') {
 				c = va_arg(args, char *);
 				goto flush;
 			} if (*fmt == 'c') {
-				//write_serial(va_arg(args, char));
+				*stream->_ptr++ = va_arg(args, char);
 				continue;
 			}
 
@@ -60,10 +63,15 @@ vfprintf(FILE *stream, const char *fmt, va_list args)
 
 flush:
 			while (*c != '\0')
-				//write_serial(*c++);
+				*stream->_ptr++ = *c++;
 
 			continue;
 		}
-		//write_serial(*fmt);
+		*stream->_ptr++ = (*fmt);
 	}
+
+	ret = stream->_ptr - stream->_buf;
+	fflush(stream);
+
+	return ret;
 }

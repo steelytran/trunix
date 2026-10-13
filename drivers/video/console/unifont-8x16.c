@@ -7,7 +7,7 @@
  * Font Embedding Exception."
  */
 
-#include "fbcon.h"
+#include "console.h"
 
 const u8 unifont_8x16[128][16] = {
 [32] = {

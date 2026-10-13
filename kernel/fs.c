@@ -25,12 +25,12 @@
 #include <stddef.h>
 #include <assert.h>
 
-#include "../drivers/video/fbcon/fbcon.h"
+#include "../drivers/video/console/console.h"
 #include "../drivers/video/fbdev/fbdev.h"
 
 extern struct kinfo k;
 
-const struct file_operations fbcon_ops = {
+const struct file_operations console_ops = {
 	.open = fbcon_open,
 	.close = fbcon_close,
 	.read = fbcon_read,
@@ -46,7 +46,7 @@ const struct file_operations fbdev_ops = {
 };
 
 const struct file_operations *cdev_ops[] = {
-	[CONSOLE] = &fbcon_ops,
+	[CONSOLE] = &console_ops,
 	[FRAMEBUFFER] = &fbdev_ops,
 };
 

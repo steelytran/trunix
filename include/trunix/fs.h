@@ -32,6 +32,7 @@
 enum major_ids { 
 	CONSOLE,
 	FRAMEBUFFER,
+	MEMORY,
 };
 
 struct dirent {
@@ -50,7 +51,8 @@ struct inode {
 	short gid;
 	u16 mode;
 	u16 nlink;
-	enum major_ids major;
+	dev_t major;
+	dev_t minor;
 	enum {V_FILE, V_LINK, V_CHAR, V_BLK, V_DIR, V_FIFO} type;
 	u32 size;
 	u32 id;

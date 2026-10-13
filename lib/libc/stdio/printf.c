@@ -1,5 +1,5 @@
 /*
- * serial logging
+ * formatted print - printf
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -19,14 +19,15 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-void
+int
 printf(const char *fmt, ...)
 {
-	char *c;
-	int base;
+	int ret;
 	va_list args;
 
 	va_start(args, fmt);
-	vfprintf(stdout, fmt, args);
+	ret = vfprintf(stdout, fmt, args);
 	va_end(args);
+
+	return ret;
 }

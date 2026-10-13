@@ -37,10 +37,9 @@ all: iso
 
 include lib/libc/Makefile.inc
 include sbin/init/Makefile.inc
-include bin/test/Makefile.inc
 include kernel/Makefile.inc
 
-iso: $(BIN) $(LIBC) $(INIT) $(TEST)
+iso: $(BIN) $(LIBC) $(INIT) $(SH)
 	mkdir -p iso/boot/grub
 	cp $< iso/boot/$<
 	tar --numeric-owner -czvf iso/boot/initrd -C initrd .

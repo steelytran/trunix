@@ -16,18 +16,19 @@
 
 LIBC = lib/libc/libc.a
 
-LOBJS += \
+LOBJS = \
+lib/libc/itoa.o \
+lib/libc/stdio/stdio.o \
+lib/libc/stdio/stdio.o \
+lib/libc/stdio/fputc.o \
+lib/libc/stdio/fflush.o \
+lib/libc/stdio/printf.o \
+lib/libc/stdio/vfprintf.o \
 lib/libc/sys/mman/mmap.o \
-
-LOBJS += \
 lib/libc/fcntl/open.o \
-
-LOBJS += \
 lib/libc/unistd/fork.o \
 lib/libc/unistd/execve.o \
 lib/libc/unistd/write.o \
-
-LOBJS += \
 lib/libc/string/memcmp.o \
 lib/libc/string/memcpy.o \
 lib/libc/string/memmove.o \

@@ -58,6 +58,11 @@ typedef int pid_t;
 #define __DEFINED_pid_t
 #endif
 
+#if defined(__NEED_dev_t) && !defined(__DEFINED_dev_t)
+typedef int dev_t;
+#define __DEFINED_dev_t
+#endif
+
 
 
 #if defined(__NEED_u8) && !defined(__DEFINED_u8)

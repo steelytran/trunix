@@ -40,9 +40,9 @@ kernel/string.c.o \
 kernel/proc.c.o \
 kernel/switch.S.o \
 drivers/video/fbdev/fbdev.c.o \
-drivers/video/fbcon/fbcon.c.o \
-drivers/video/fbcon/misc-fixed-8x13B.c.o \
-drivers/video/fbcon/unifont-8x16.c.o \
+drivers/video/console/console.c.o \
+drivers/video/console/misc-fixed-8x13B.c.o \
+drivers/video/console/unifont-8x16.c.o \
 
 BIN = trunix
 

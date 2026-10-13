@@ -16,20 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/mman.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <string.h>
+#include <stdio.h>
 
 int
 main(void)
 {
-	unsigned int i, j;
-	unsigned int *fb;
-	int fd;
-
-	fd = open("/dev/fb", 0, 0);
-	fb = mmap(NULL, 1280 * 800 * 32, 0, 0, fd, 0);
-
+	printf("trunix");
 	return 0;
 }

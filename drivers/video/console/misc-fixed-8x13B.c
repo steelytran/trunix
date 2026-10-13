@@ -1,4 +1,4 @@
-#include "fbcon.h"
+#include "console.h"
 
 const u8 misc_fixed_8x13B[128][13] = {
 [0] = {

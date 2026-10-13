@@ -1,5 +1,5 @@
 /*
- * test binary
+ * console driver
  * Copyright (C) 2026  spenna
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,22 +16,38 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sys/mman.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
+#ifndef _CONSOLE_H
+#define _CONSOLE_H
 
-int
-main(void)
-{
-	unsigned long i;
+#define __NEED_u8
+#define __NEED_u32
+#include <trunix/types.h>
 
-	char *fb;
-	int fd;
+#include <sys/types.h>
+#include <stddef.h>
 
-	fd = open("/dev/fb", 0);
-	fb = mmap(NULL, 0xF000, 0, 0, fd, 0);
+struct fbdev;
+struct file;
+struct inode;
 
-	for (i = 0; i < 0xF000; ++i)
-		fb[i] = i;
-}
+struct font {
+	int w;
+	int h;
+	void *bitmap;
+};
+
+extern const u8 misc_fixed_8x13B[128][13]; 
+extern const u8 unifont_8x16[128][16];
+
+struct console {
+	const void *buf;
+	struct fbdev *fb;
+};
+
+int fbcon_open(struct inode *, struct file *);
+int fbcon_close(struct inode *, struct file *);
+ssize_t fbcon_read(struct file *file, char *buf, size_t, loff_t *);
+ssize_t fbcon_write(struct file *, const char *, size_t, loff_t *);
+
+
+#endif
