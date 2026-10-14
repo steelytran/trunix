@@ -18,6 +18,7 @@ LIBC = lib/libc/libc.a
 
 LOBJS = \
 lib/libc/itoa.o \
+lib/libc/stdlib/malloc.o \
 lib/libc/stdio/stdio.o \
 lib/libc/stdio/stdio.o \
 lib/libc/stdio/fputc.o \

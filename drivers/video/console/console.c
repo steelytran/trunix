@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/drivers.h>
 #include <trunix/trunix.h>
 #include <trunix/vm.h>
 #include <trunix/fs.h>
@@ -28,15 +29,21 @@
 #include "../fbdev/fbdev.h"
 
 /* hopefully a very temporary solution... */
+#if 0
 #define FONT unifont_8x16
-#define FONT_W 8
 #define FONT_H 16
+#else
+#define FONT misc_fixed_8x13B
+#define FONT_H 13
+#endif
+
+#define FONT_W 8
 #define SCALE 2
 #define CELL_W (FONT_W * SCALE)
 #define CELL_H (FONT_H * SCALE)
 
 #define COORD(fb, x, y)\
-    (((u8 *)(fb)->addr) + ((y) * (fb)->pitch + (x) * ((fb)->bpp / 8)))
+    (u32 *)(((u8 *)(fb)->addr) + ((y) * (fb)->pitch + (x) * ((fb)->bpp / 8)))
 
 extern struct kinfo k;
 
@@ -46,6 +53,13 @@ int fbcon_open(struct inode *, struct file *);
 int fbcon_close(struct inode *, struct file *);
 ssize_t fbcon_read(struct file *file, char *buf, size_t, loff_t *);
 ssize_t fbcon_write(struct file *, const char *, size_t, loff_t *);
+
+const struct file_operations console_ops = {
+	.open = fbcon_open,
+	.close = fbcon_close,
+	.read = fbcon_read,
+	.write = fbcon_write,
+};
 
 static void
 fbconchar(int xpos, int ypos, char c)

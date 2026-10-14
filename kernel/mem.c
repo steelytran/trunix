@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/drivers.h>
 #include <trunix/fs.h>
 #include <trunix/vm.h>
 #include <trunix/trunix.h>
@@ -262,15 +263,24 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 	u32 *pd = p2v(p->cr3);
 	u32 m;
 
-	/*
-	 * if FLAGS & MAP_ANON
-	 *	allocate memory
-	 */
+	if (len == 0)
+		return NULL;
 
-	f = p->ofile[fd];
+	len = pg_roundup(len);
+	if (p->mmap_base + len >= MMAP_LIMIT)
+		return NULL;
 
-	if (f == NULL)
-		return -1;
+	mem = kmalloc(sizeof(struct vm_region));
+
+	if (flags & MAP_ANON) {
+		mem->pa = v2p(alloc_pages(len));
+	} else {
+		f = p->ofile[fd];
+		if (f == NULL)
+			return -1;
+
+		(*cdevs[f->inode->major]->mmap)(f, mem);
+	}
 
 	/*
 	 * if addr != NULL
@@ -281,21 +291,20 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 	 * 	least len bytes long
 	 */
 
-	len = pg_roundup(len);
-	if (p->mmap_base + len >= MMAP_LIMIT)
-		return NULL;
-
-	mem = kmalloc(sizeof(struct vm_region));
-	mem->va = p->mmap_base += len;
+	mem->va = p->mmap_base;
+	p->mmap_base += len;
 	mem->len = len;
-
-	(*cdev_ops[f->inode->major]->mmap)(f, mem);
 
 	alloc_pt(pd,
 	    mem->va,
 	    mem->pa,
 	    mem->len,
 	    PG_US | PG_RW | PG_P);
+	/*  PG_US | flags); */
+	/*  
+	 * FIX: value passed in
+	 * flags is clobbered.
+	 */
 
 	SLIST_INSERT_HEAD(GETMEMMAP(p), mem, entry);
 

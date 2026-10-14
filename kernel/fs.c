@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/drivers.h>
 #include <trunix/trunix.h>
 #include <trunix/vm.h>
 #include <trunix/fs.h>
@@ -30,22 +31,7 @@
 
 extern struct kinfo k;
 
-const struct file_operations console_ops = {
-	.open = fbcon_open,
-	.close = fbcon_close,
-	.read = fbcon_read,
-	.write = fbcon_write,
-};
-
-const struct file_operations fbdev_ops = {
-	.open = fbdev_open,
-	.close = fbdev_close,
-	.read = fbdev_read,
-	.write = fbdev_write,
-	.mmap = fbdev_mmap,
-};
-
-const struct file_operations *cdev_ops[] = {
+const struct file_operations *cdevs[] = {
 	[CONSOLE] = &console_ops,
 	[FRAMEBUFFER] = &fbdev_ops,
 };
@@ -147,7 +133,7 @@ found:
 	assert(f != NULL);
 	f->inode = &k.ino_tbl[k.dir_tbl[i].inode];
 
-	(*cdev_ops[f->inode->major]->open)(f->inode, f);
+	(*cdevs[f->inode->major]->open)(f->inode, f);
 	return f;
 }
 
@@ -175,7 +161,7 @@ found:
 	p->ofile[fd] = f;
 	f->inode = &k.ino_tbl[k.dir_tbl[i].inode];
 
-	(*cdev_ops[f->inode->major]->open)(f->inode, f);
+	(*cdevs[f->inode->major]->open)(f->inode, f);
 
 	return fd;
 }
@@ -191,7 +177,7 @@ sys_write(int fd, const void *buf, size_t count)
 	if (f == NULL)
 		return -1;
 
-	(*cdev_ops[f->inode->major]->write)(f, buf, count, 0);
+	(*cdevs[f->inode->major]->write)(f, buf, count, 0);
 
 	return 0;
 }

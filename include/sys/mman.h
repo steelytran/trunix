@@ -22,6 +22,17 @@
 #define __NEED_size_t
 #include <trunix/types.h>
 
+#define PROT_READ 0x01
+#define PROT_WRITE 0x02
+/* #define PROT_EXEC 0x04*/
+#define PROT_NONE 0x00
+
+#define MAP_ANONYMOUS 0x01
+#define MAP_ANON MAP_ANONYMOUS
+#define MAP_FIXED 0x02
+#define MAP_PRIVATE 0x04
+#define MAP_SHARED 0x08
+
 void *mmap(void *, size_t, int, int, int, long);
 void munmap(void *, size_t);
 

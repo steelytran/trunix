@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/drivers.h>
 #include <trunix/trunix.h>
 #include <trunix/vm.h>
 #include <trunix/fs.h>
@@ -34,6 +35,14 @@ ssize_t fbdev_read(struct file *file, char *buf, size_t, loff_t *);
 ssize_t fbdev_write(struct file *, const char *, size_t, loff_t *);
 int fbdev_mmap(struct file *, struct vm_region *);
 int fbdev_ioctl(struct inode *, struct file *, int, void *);
+
+const struct file_operations fbdev_ops = {
+	.open = fbdev_open,
+	.close = fbdev_close,
+	.read = fbdev_read,
+	.write = fbdev_write,
+	.mmap = fbdev_mmap,
+};
 
 int
 fbdev_open(struct inode *inode, struct file *file)
@@ -78,7 +87,11 @@ fbdev_close(struct inode *inode, struct file *file)
 ssize_t
 fbdev_read(struct file *file, char *buf, size_t sz, loff_t *off)
 {
-	return -1;
+	if (file->data == NULL)
+		return -1;
+
+	memcpy(buf, ((struct fbdev *)file->data)->addr, sz);
+	return sz;
 }
 
 ssize_t
@@ -88,6 +101,7 @@ fbdev_write(struct file *file, const char *buf, size_t sz, loff_t *off)
 		return -1;
 
 	memcpy(((struct fbdev *)file->data)->addr, buf, sz);
+	return sz;
 }
 
 int

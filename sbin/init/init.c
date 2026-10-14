@@ -16,12 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 
 int
 main(void)
 {
-	printf("trunix");
+	printf("hello trunix\n");
 	return 0;
 }
