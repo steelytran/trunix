@@ -49,10 +49,10 @@ extern struct kinfo k;
 
 struct fbdev *fb;
 
-int fbcon_open(struct inode *, struct file *);
-int fbcon_close(struct inode *, struct file *);
-ssize_t fbcon_read(struct file *file, char *buf, size_t, loff_t *);
-ssize_t fbcon_write(struct file *, const char *, size_t, loff_t *);
+static int fbcon_open(struct inode *, struct file *);
+static int fbcon_close(struct inode *, struct file *);
+static ssize_t fbcon_read(struct file *file, char *buf, size_t, loff_t *);
+static ssize_t fbcon_write(struct file *, const char *, size_t, loff_t *);
 
 const struct file_operations console_ops = {
 	.open = fbcon_open,
@@ -91,7 +91,7 @@ fbconchar(int xpos, int ypos, char c)
 	}
 }
 
-int
+static int
 fbcon_open(struct inode *inode, struct file *file)
 {
 	struct file *fb;
@@ -105,7 +105,7 @@ fbcon_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
-int
+static int
 fbcon_close(struct inode *inode, struct file *file)
 {
 	return -1;
@@ -117,7 +117,7 @@ fbcon_read(struct file *file, char *buf, size_t sz, loff_t *off)
 	return -1;
 }
 
-ssize_t
+static ssize_t
 fbcon_write(struct file *file, const char *buf, size_t sz, loff_t *off)
 {
 	int i;

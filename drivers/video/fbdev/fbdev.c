@@ -29,12 +29,12 @@
 
 extern struct kinfo k;
 
-int fbdev_open(struct inode *, struct file *);
-int fbdev_close(struct inode *, struct file *);
-ssize_t fbdev_read(struct file *file, char *buf, size_t, loff_t *);
-ssize_t fbdev_write(struct file *, const char *, size_t, loff_t *);
-int fbdev_mmap(struct file *, struct vm_region *);
-int fbdev_ioctl(struct inode *, struct file *, int, void *);
+static int fbdev_open(struct inode *, struct file *);
+static int fbdev_close(struct inode *, struct file *);
+static ssize_t fbdev_read(struct file *file, char *buf, size_t, loff_t *);
+static ssize_t fbdev_write(struct file *, const char *, size_t, loff_t *);
+static int fbdev_mmap(struct file *, struct vm_region *);
+static int fbdev_ioctl(struct inode *, struct file *, int, void *);
 
 const struct file_operations fbdev_ops = {
 	.open = fbdev_open,
@@ -44,7 +44,7 @@ const struct file_operations fbdev_ops = {
 	.mmap = fbdev_mmap,
 };
 
-int
+static int
 fbdev_open(struct inode *inode, struct file *file)
 {
 	struct multiboot_info mbi = k.mbi;
@@ -78,13 +78,13 @@ fbdev_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
-int
+static int
 fbdev_close(struct inode *inode, struct file *file)
 {
 	return -1;
 }
 
-ssize_t
+static ssize_t
 fbdev_read(struct file *file, char *buf, size_t sz, loff_t *off)
 {
 	if (file->data == NULL)
@@ -94,7 +94,7 @@ fbdev_read(struct file *file, char *buf, size_t sz, loff_t *off)
 	return sz;
 }
 
-ssize_t
+static ssize_t
 fbdev_write(struct file *file, const char *buf, size_t sz, loff_t *off)
 {
 	if (file->data == NULL)
@@ -104,7 +104,7 @@ fbdev_write(struct file *file, const char *buf, size_t sz, loff_t *off)
 	return sz;
 }
 
-int
+static int
 fbdev_mmap(struct file *file, struct vm_region *mem)
 {
 	if (file->data == NULL)

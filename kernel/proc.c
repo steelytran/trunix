@@ -129,7 +129,9 @@ alloc_thread()
 static struct proc *
 proc_create()
 {
-	struct proc *p = alloc_thread();
+	struct proc *p;
+
+	p = alloc_thread();
 
 	p->tf->gs = (4 * 8) | 3;
 	p->tf->fs = (4 * 8) | 3;
@@ -189,17 +191,17 @@ found:
 			continue;
 		}
 
-		start = ph[i].va;
-		end = start + ph[i].memsz;
+		start = pg_rounddown(ph[i].va);
+		end = pg_roundup(ph[i].va + ph[i].memsz);
 
 		if (start < min)
-			min = pg_rounddown(start);
+			min = start;
 
 		if (end > max)
-			max = pg_roundup(end);
+			max = end;
 	}
 	p->mmap_base = max;
-	sz = pg_roundup(max - min + STACK_SIZE);
+	sz = pg_roundup((max - min) + STACK_SIZE);
 	mem = alloc_pages(sz);
 	/* assert */
 	memset(mem, 0, sz);
@@ -221,7 +223,7 @@ found:
 
 		m[n].va = ph[i].va;
 		m[n].pa = v2p(mem);
-		m[n].len = pg_roundup(ph[i].memsz);
+		m[n].len = pg_roundup(ph[i].memsz + (ph[i].va & 0xFFF));
 		
 		SLIST_INSERT_HEAD(GETMEMMAP(p), &m[n], entry);
 
@@ -264,7 +266,9 @@ static
 struct proc *
 kthread_create(void (*eip)())
 {
-	struct proc *p = alloc_thread();
+	struct proc *p;
+
+	p = alloc_thread();
 
 	p->cr3 = NULL;
 	p->state = READY;
@@ -391,8 +395,9 @@ sys_fork()
 	u32 *pd;
 	u32 mem;
 	struct vm_region *m1, *m2;
-	struct proc *n = proc_create();
+	struct proc *n;
 
+	n  = proc_create();
 	if (n == NULL)
 		return -1;
 
@@ -436,7 +441,9 @@ sys_fork()
 int
 sys_execve(const char *path, const char **argv, const char **envp)
 {
-	struct proc *p = proc_create();
+	struct proc *p;
+
+	p = proc_create();
 	p->pid = curthread->pid;
 
 	if (loadelf(p, path) < 0)

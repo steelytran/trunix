@@ -202,8 +202,6 @@ INT_0x20:
 /* ps2 keyboard */
 .globl INT_0x21
 INT_0x21:
-	iret
-
 	pushl %eax
 	pushl %ebx
 
@@ -272,6 +270,12 @@ fork:
 	jmp end_syscall
 
 read:
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+	call sys_read
+	addl $3 * 4, %esp
+	movl %eax, (7 * 4)(%esp)
 	jmp end_syscall
 
 write:

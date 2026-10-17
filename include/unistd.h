@@ -23,12 +23,14 @@
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
 
-/* long syscall(long, ...);* */
-
 #include <sys/types.h>
+
+/* long syscall(long, ...);* */
 
 pid_t fork(void);
 int execve(const char *, const char **, const char **);
+ssize_t read(int, void *, size_t);
 ssize_t write(int, const void *, size_t);
+void _exit(int);
 
 #endif

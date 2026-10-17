@@ -54,8 +54,8 @@ void free_mem(void *, u32);
 void *kmalloc(u32);
 void kfree(void *);
 
-void *mmap(void *, size_t, int, int, int, off_t);
-void munmap(void *, size_t);
+void *sys_mmap(void *, size_t, int, int, int, off_t);
+void sys_munmap(void *, size_t);
 
 void *
 alloc_pages(u32 sz)
@@ -259,12 +259,15 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 {
 	struct vm_region *mem;
 	struct file *f;
-	struct proc *p = getproc();
-	u32 *pd = p2v(p->cr3);
+	struct proc *p;
+	u32 *pd;
 	u32 m;
+	u32 *page;
 
 	if (len == 0)
 		return NULL;
+
+	p = getproc();
 
 	len = pg_roundup(len);
 	if (p->mmap_base + len >= MMAP_LIMIT)
@@ -273,7 +276,8 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 	mem = kmalloc(sizeof(struct vm_region));
 
 	if (flags & MAP_ANON) {
-		mem->pa = v2p(alloc_pages(len));
+		mem->pa = v2p(page = alloc_pages(len));
+		memset(page, 0, pg_roundup(len));
 	} else {
 		f = p->ofile[fd];
 		if (f == NULL)
@@ -295,6 +299,7 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 	p->mmap_base += len;
 	mem->len = len;
 
+	pd = p2v(p->cr3);
 	alloc_pt(pd,
 	    mem->va,
 	    mem->pa,

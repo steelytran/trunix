@@ -142,8 +142,9 @@ sys_open(const char* path, int oflag, ...)
 {
 	int fd, i;
 	struct file *f;
-	struct proc *p = getproc();
+	struct proc *p;
 
+	p = getproc();
 	assert(p != NULL);
 
 	for (i = ROOT_INO; i < k.ino_n; ++i)
@@ -167,11 +168,29 @@ found:
 }
 
 int
+sys_read(int fd, void *buf, size_t count)
+{
+	struct file *f;
+	struct proc *p;
+
+	p = getproc();
+	f = p->ofile[fd];
+
+	if (f == NULL)
+		return -1;
+
+	(*cdevs[f->inode->major]->read)(f, buf, count, 0);
+
+	return 0;
+}
+
+int
 sys_write(int fd, const void *buf, size_t count)
 {
 	struct file *f;
-	struct proc *p = getproc();
+	struct proc *p;
 
+	p = getproc();
 	f = p->ofile[fd];
 
 	if (f == NULL)

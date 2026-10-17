@@ -44,10 +44,4 @@ struct console {
 	struct fbdev *fb;
 };
 
-int fbcon_open(struct inode *, struct file *);
-int fbcon_close(struct inode *, struct file *);
-ssize_t fbcon_read(struct file *file, char *buf, size_t, loff_t *);
-ssize_t fbcon_write(struct file *, const char *, size_t, loff_t *);
-
-
 #endif

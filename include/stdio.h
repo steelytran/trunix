@@ -50,9 +50,9 @@ struct __IO_FILE {
 	enum mode _mode;
 };
 
-extern FILE __stdin;
-extern FILE __stdout;
-extern FILE __stderr;
+extern const FILE __stdin;
+extern const FILE __stdout;
+extern const FILE __stderr;
 
 #define stdin ((FILE *)&__stdin)
 #define stdout ((FILE *)&__stdout)

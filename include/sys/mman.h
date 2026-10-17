@@ -22,9 +22,13 @@
 #define __NEED_size_t
 #include <trunix/types.h>
 
+/*
+ * most i386 cpus do not support marking pages as not executable, maybe
+ * workaround by changing userspace cs base and or limit in gdt?
+ */
 #define PROT_READ 0x01
 #define PROT_WRITE 0x02
-/* #define PROT_EXEC 0x04*/
+#define PROT_EXEC 0x03
 #define PROT_NONE 0x00
 
 #define MAP_ANONYMOUS 0x01

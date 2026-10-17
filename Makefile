@@ -23,11 +23,11 @@ GRUB = i686-elf-grub
 
 ASFLAGS = $(INCLUDE) $(TARGET)
 CFLAGS = -ffreestanding -nostdlib -nobuiltininc -fno-builtin \
--fno-strict-aliasing -fno-stack-protector -fno-pic -fno-pie \
--mno-sse -mno-sse2 -mno-3dnow -mstack-alignment=4 -mno-mmx \
--mgeneral-regs-only -Wno-pointer-integer-compare -Wno-int-conversion \
+-fno-strict-aliasing -fno-stack-protector -fno-pic -fno-pie -mno-sse \
+-mno-sse2 -mno-3dnow -mstack-alignment=4 -mno-mmx -mgeneral-regs-only \
+-Wno-pointer-integer-compare -Wno-int-conversion \
 -Wno-incompatible-function-pointer-types -g3 -glldb -static -std=c99 \
-$(INCLUDE) $(TARGET) 
+$(INCLUDE) $(TARGET)
 
 INCLUDE = -isystem include
 TARGET = -arch i386 -target i386-unknown-none-elf
@@ -42,7 +42,7 @@ include kernel/Makefile.inc
 iso: $(BIN) $(LIBC) $(INIT) $(SH)
 	mkdir -p iso/boot/grub
 	cp $< iso/boot/$<
-	tar --numeric-owner -czvf iso/boot/initrd -C initrd .
+	tar --no-xattrs --numeric-owner -czvf iso/boot/initrd -C initrd .
 	cp grub.cfg iso/boot/grub/grub.cfg
 	$(GRUB)-mkrescue -o $<.iso iso
 

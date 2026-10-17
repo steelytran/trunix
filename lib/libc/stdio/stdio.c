@@ -12,7 +12,7 @@ size_t __stdio_write();
 off_t __stdio_seek();
 int __stdio_close();
 
-FILE __stdin = {
+const FILE __stdin = {
 	._fd = 0,
 	._read = __stdio_read,
 	._seek = __stdio_seek,
@@ -24,7 +24,7 @@ FILE __stdin = {
 	._mode = _IOLBF
 };
 
-FILE __stdout = {
+const FILE __stdout = {
 	._fd = 1,
 	._write = __stdio_write,
 	._seek = __stdio_seek,
@@ -36,7 +36,7 @@ FILE __stdout = {
 	._mode = _IOLBF
 };
 
-FILE __stderr = {
+const FILE __stderr = {
 	._fd = 2,
 	._write = __stdio_write,
 	._seek = __stdio_seek,

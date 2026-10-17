@@ -22,5 +22,9 @@
 #include <stddef.h>
 
 void *malloc(size_t);
+void free(void *);
+
+void exit(int);
+void _Exit(int);
 
 #endif

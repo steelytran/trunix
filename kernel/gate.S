@@ -402,7 +402,7 @@ init_idt:
 	outb %al, $0xA1
 
 /* mask */
-	movb $0b11111110, %al
+	movb $0b11111100, %al
 	outb %al, $0x21
 	movb $0b11111111, %al
 	outb %al, $0xA1

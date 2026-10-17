@@ -18,17 +18,20 @@ LIBC = lib/libc/libc.a
 
 LOBJS = \
 lib/libc/itoa.o \
+lib/libc/assert.o \
 lib/libc/stdlib/malloc.o \
 lib/libc/stdio/stdio.o \
 lib/libc/stdio/stdio.o \
 lib/libc/stdio/fputc.o \
 lib/libc/stdio/fflush.o \
 lib/libc/stdio/printf.o \
+lib/libc/stdio/fprintf.o \
 lib/libc/stdio/vfprintf.o \
 lib/libc/sys/mman/mmap.o \
 lib/libc/fcntl/open.o \
 lib/libc/unistd/fork.o \
 lib/libc/unistd/execve.o \
+lib/libc/unistd/read.o \
 lib/libc/unistd/write.o \
 lib/libc/string/memcmp.o \
 lib/libc/string/memcpy.o \
@@ -39,6 +42,7 @@ lib/libc/string/strlcpy.o \
 lib/libc/string/strlen.o \
 lib/libc/string/strncmp.o \
 lib/libc/string/strncpy.o \
+lib/libc/string/strerror.o \
 
 $(LIBC): $(LOBJS)
 	$(AR) rcs $@ $^
