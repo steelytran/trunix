@@ -36,10 +36,10 @@ TARGET = -arch i386 -target i386-unknown-none-elf
 all: iso
 
 include lib/libc/Makefile.inc
-include sbin/init/Makefile.inc
+include sbin/Makefile.inc
 include kernel/Makefile.inc
 
-iso: $(BIN) $(LIBC) $(INIT) $(SH)
+iso: $(BIN) $(LIBC) $(INIT) $(TEST)
 	mkdir -p iso/boot/grub
 	cp $< iso/boot/$<
 	tar --no-xattrs --numeric-owner -czvf iso/boot/initrd -C initrd .

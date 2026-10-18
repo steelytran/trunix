@@ -15,6 +15,17 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 INIT = initrd/sbin/init
+TEST = initrd/sbin/test
+
+$(TEST): sbin/test/test.o sbin/test/crt0.o
+	$(LD) -Llib/libc -lc $^ -o $@
+
+sbin/test/test.o: sbin/test/test.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+sbin/test/crt0.o: sbin/test/crt0.S
+	$(AS) $(ASFLAGS) -c $< -o $@
+
 
 $(INIT): sbin/init/init.o sbin/init/crt0.o
 	$(LD) -Llib/libc -lc $^ -o $@
@@ -25,4 +36,4 @@ sbin/init/init.o: sbin/init/init.c
 sbin/init/crt0.o: sbin/init/crt0.S
 	$(AS) $(ASFLAGS) -c $< -o $@
 
-CLEANFILES += $(INIT) sbin/init/init.o sbin/init/crt0.o
+CLEANFILES += $(INIT) $(TEST) sbin/init/init.o sbin/init/crt0.o

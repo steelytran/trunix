@@ -16,11 +16,21 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <unistd.h>
 #include <stdio.h>
-#include <string.h>
 
 int
 main(void)
 {
-	printf("hello trunix");
+	int pid;
+
+	if ((pid = fork()) == 0)
+		execve("/sbin/test", NULL, NULL);
+	else if (pid < 0) {
+		printf("fork failed");
+		for (;;);
+	}
+
+	printf("parent\n");
+	for (;;);
 }

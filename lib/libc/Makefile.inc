@@ -17,7 +17,6 @@
 LIBC = lib/libc/libc.a
 
 LOBJS = \
-lib/libc/itoa.o \
 lib/libc/assert.o \
 lib/libc/stdlib/malloc.o \
 lib/libc/stdio/stdio.o \
@@ -29,6 +28,7 @@ lib/libc/stdio/fprintf.o \
 lib/libc/stdio/vfprintf.o \
 lib/libc/sys/mman/mmap.o \
 lib/libc/fcntl/open.o \
+lib/libc/unistd/_exit.o \
 lib/libc/unistd/fork.o \
 lib/libc/unistd/execve.o \
 lib/libc/unistd/read.o \

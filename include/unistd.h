@@ -23,7 +23,11 @@
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
 
+#define __NEED_NULL
+#include <trunix/types.h>
+
 #include <sys/types.h>
+#include <sys/cdefs.h>
 
 /* long syscall(long, ...);* */
 
@@ -31,6 +35,6 @@ pid_t fork(void);
 int execve(const char *, const char **, const char **);
 ssize_t read(int, void *, size_t);
 ssize_t write(int, const void *, size_t);
-void _exit(int);
+__dead void _exit(int);
 
 #endif

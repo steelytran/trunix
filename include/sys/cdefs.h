@@ -23,4 +23,7 @@
 #define __packed __attribute__((__packed__))
 #define __aligned(x) __attribute__((__aligned__(x)))
 
+#define __predict_true(exp) __builtin_expect((exp), 1)
+#define __predict_false(exp) __builtin_expect((exp), 0)
+
 #endif

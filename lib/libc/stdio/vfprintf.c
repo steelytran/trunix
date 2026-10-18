@@ -19,37 +19,106 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-extern char *itoa(int, unsigned);
+static char *
+itoa(int n, int base, int ucase)
+{
+	int j, i = 0;
+	char c;
+	static char s[33];
+	unsigned int un;
+	const char *hex;
+	const static char lower[] = "0123456789abcdef";
+	const static char upper[] = "0123456789ABCDEF";
+
+	if (n == 0) {
+		s[0] = '0';
+		s[1] = '\0';
+		return s;
+	}
+
+	if (base < 0) {
+		base = -base;
+		if (n > 0)
+			goto usgn;
+
+		s[i++] = '-';
+		un = (unsigned int)(-n);
+		j = 1;
+	} else {
+usgn:
+		un = (unsigned int)n;
+		j = 0;
+	}
+
+	if (ucase)
+		hex = upper;
+	else
+		hex = lower;
+
+	while (un > 0) {
+		s[i++] = hex[un % base];
+		un /= base;
+	} 
+
+	s[i] = '\0';
+
+	for (--i; j < i; --i, ++j) {
+		c = s[i];
+		s[i] = s[j];
+		s[j] = c;
+	}
+
+	return s;
+}
 
 int
 vfprintf(FILE *stream, const char *fmt, va_list args)
 {
 	int ret;
+	int base, ucase;
 	char *c;
-	int base;
+	unsigned char *start = stream->_ptr;
+
 	for (; *fmt != '\0'; ++fmt) {
 		if (*fmt == '%') {
 			++fmt;
-			if (*fmt == '\0')
+			if (*fmt == '\0') {
+				*stream->_ptr++ = '%';
 				break;
-			if (*fmt == '%') {
-				*stream->_ptr++ = *fmt;
-				continue;
-			} if (*fmt == 's') {
-				c = va_arg(args, char *);
-				goto flush;
-			} if (*fmt == 'c') {
-				*stream->_ptr++ = va_arg(args, char);
-				continue;
 			}
 
 			switch (*fmt) {
+			case '%':
+				*stream->_ptr++ = *fmt;
+				continue;
+			case 'c':
+				*stream->_ptr++ = (unsigned char)va_arg(args, int);
+				continue;
+			case 'n':
+				*(int *)va_arg(args, int *) = stream->_ptr - start;
+				continue;
+			case 's':
+				c = va_arg(args, char *);
+				goto flush;
+			case 'p':
+				*stream->_ptr++ = '0';
+				*stream->_ptr++ = 'x';
+				c = itoa(va_arg(args, void *), 16, 0);
+				goto flush;
 			case 'X':
-			case 'x':
+				ucase = 1;
 				base = 16;
 				break;
-			case 'd':
+			case 'x':
+				ucase = 0;
+				base = 16;
+				break;
+			case 'u':
 				base = 10;
+				break;
+			case 'i':/* FALLTHROUGH */
+			case 'd':
+				base = -10;
 				break;
 			case 'o':
 				base = 8;
@@ -59,7 +128,7 @@ vfprintf(FILE *stream, const char *fmt, va_list args)
 				break;
 			}
 
-			c = itoa(va_arg(args, int), base);
+			c = itoa(va_arg(args, int), base, ucase);
 
 flush:
 			while (*c != '\0')

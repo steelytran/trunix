@@ -68,6 +68,11 @@ struct proghdr {
 
 TAILQ_HEAD(pqueue, proc);
 static struct pqueue queue = TAILQ_HEAD_INITIALIZER(queue);
+
+/* 
+ * TODO: use process mmap table so that terminated processes may have
+ * their pid reused.
+ */
 static unsigned int pid = 1;
 
 extern void trapret();
@@ -90,7 +95,9 @@ int sys_execve(const char *, const char **, const char **);
 static void forkret();
 static struct proc *alloc_thread();
 static struct proc *proc_create();
+static void proc_destroy();
 static int loadelf(struct proc *, const char *);
+static void free_uvm(struct proc *);
 
 static void
 forkret()
@@ -145,10 +152,30 @@ proc_create()
 	p->tf->ss = (4 * 8) | 3;
 
 	p->state = READY;
-	p->pid = pid++;
 
 	return p;
 }
+
+static void
+proc_destroy()
+{
+	free_uvm(curthread);
+	write_cr3(kpagedir);
+	free_pages(curthread->cr3, 0x1000);
+	free_pages(curthread->kstack, KSTACK_SIZE);
+}
+
+static void
+free_uvm(struct proc *p)
+{
+	struct vm_region *m, *tmp;
+	SLIST_FOREACH_SAFE(m, GETMEMMAP(p), entry, tmp) {
+		SLIST_REMOVE(GETMEMMAP(p), m, vm_region, entry);
+		free_pages(p2v(m->pa), m->len);
+	}
+}
+
+
 
 static int
 loadelf(struct proc *p, const char *path)
@@ -158,7 +185,7 @@ loadelf(struct proc *p, const char *path)
 	u32 mem, bin, sz;
 	struct elfhdr *elf;
 	struct proghdr *ph;
-	struct vm_region *m;
+	struct vm_region *m, *tmp;
 	u32 start, end;
 	u32 min = ~0;
 	u32 max = 0;
@@ -200,6 +227,10 @@ found:
 		if (end > max)
 			max = end;
 	}
+
+	SLIST_FOREACH_SAFE(m, GETMEMMAP(p), entry, tmp)
+		SLIST_REMOVE(GETMEMMAP(p), m, vm_region, entry);
+
 	p->mmap_base = max;
 	sz = pg_roundup((max - min) + STACK_SIZE);
 	mem = alloc_pages(sz);
@@ -377,10 +408,8 @@ found:
 		TAILQ_REMOVE(&queue, p, entries);
 		curthread->state = RUNNING;
 
-		if (curthread->cr3) {
-			write_cr3(curthread->cr3);
-			tss.esp0 = curthread;
-		}
+		write_cr3(curthread->cr3);
+		tss.esp0 = curthread;
 
 		switch_to(&idle->context, p->context);
 
@@ -391,9 +420,9 @@ found:
 int
 sys_fork()
 {
-	int i;
 	u32 *pd;
 	u32 mem;
+	int i, fd;
 	struct vm_region *m1, *m2;
 	struct proc *n;
 
@@ -430,9 +459,16 @@ sys_fork()
 		SLIST_INSERT_HEAD(GETMEMMAP(n), m2, entry);
 	}
 
+	n->parent = curthread;
 	n->cr3 = v2p(pd);
 	*n->tf = *curthread->tf;
 	n->tf->eax = 0; /* child returns 0 */
+
+	for (fd = 0; curthread->ofile[fd] != NULL; ++fd) {
+		n->ofile[fd] = kmalloc(sizeof(struct file));
+		*n->ofile[fd] = *curthread->ofile[fd];
+	}
+
 	enqueue(n);
 
 	return n->pid;
@@ -441,14 +477,27 @@ sys_fork()
 int
 sys_execve(const char *path, const char **argv, const char **envp)
 {
-	struct proc *p;
+	struct proc p = *curthread;
 
-	p = proc_create();
-	p->pid = curthread->pid;
-
-	if (loadelf(p, path) < 0)
+	if (loadelf(&p, path) < 0) {
 		return -1;
+	}
 
-	enqueue(p);
-	dequeue();
+	*curthread = p;
+
+	yield();
+}
+
+void
+sys_exit(int stat)
+{
+	cli();
+
+	if (__predict_false(curthread->pid == 1))
+		panic("init process exiting");
+
+	/* close file descriptors */
+
+	curthread->state = DEAD;
+	yield();
 }

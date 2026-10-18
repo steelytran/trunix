@@ -262,6 +262,9 @@ restart:
 	jmp end_syscall
 
 exit:
+	pushl %ecx
+	call sys_exit
+	addl $4, %esp
 	jmp end_syscall
 
 fork:

@@ -50,7 +50,7 @@ void init_mem(struct kinfo *);
 u32 *copykvm();
 void alloc_pt(u32 *, u32, u32, u32, int);
 void *alloc_pages(u32);
-void free_mem(void *, u32);
+void free_pages(void *, u32);
 void *kmalloc(u32);
 void kfree(void *);
 

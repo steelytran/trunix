@@ -38,6 +38,7 @@ malloc(size_t sz)
 	sz += sizeof(*hdr);
 	sz = roundup(sz, sizeof(*hdr));
 
+	/* first allocation */
 	if (SLIST_EMPTY(&heap)) {
 		SLIST_INIT(&heap);
 		s = mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_ANON, -1, 0);
@@ -50,10 +51,12 @@ malloc(size_t sz)
 		return hdr + 1;
 	}
 
+	/* search for free blocks */
 	SLIST_FOREACH(p, &heap, entry)
 		if (p->sz >= sz)
 			goto found;
 
+#if 0
 	/* allocate new page */
 	SLIST_INIT(&heap);
 	s = mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_ANON, -1, 0);
@@ -63,6 +66,9 @@ malloc(size_t sz)
 
 	hdr = s;
 	return hdr + 1;
+#else
+	return NULL;
+#endif
 
 found:
 	if (p->sz > sz) {
