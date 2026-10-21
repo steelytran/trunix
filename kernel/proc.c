@@ -80,8 +80,8 @@ extern void trapret();
 void init_sched();
 void initsys();
 void enqueue(struct proc *);
-void dequeue();
 void yield();
+void yield_idle();
 __dead void scheduler();
 
 #ifdef NOKTHREAD
@@ -148,7 +148,6 @@ proc_create()
 	/* iret */
 	p->tf->cs = (3 * 8) | 3;
 	p->tf->eflags = 0x0202;
-
 	p->tf->ss = (4 * 8) | 3;
 
 	p->state = READY;
@@ -174,8 +173,6 @@ free_uvm(struct proc *p)
 		free_pages(p2v(m->pa), m->len);
 	}
 }
-
-
 
 static int
 loadelf(struct proc *p, const char *path)
@@ -369,14 +366,6 @@ enqueue(struct proc *task)
 }
 
 void
-dequeue()
-{
-	cli();
-	curthread->state = DEAD;
-	yield();
-}
-
-void
 yield()
 {
 	cli();
@@ -413,11 +402,13 @@ found:
 
 		switch_to(&idle->context, p->context);
 
+		write_cr3(v2p(kpagedir));
+
 		TAILQ_INSERT_TAIL(&queue, p, entries);
 	}
 }
 
-int
+pid_t
 sys_fork()
 {
 	u32 *pd;
@@ -493,11 +484,23 @@ sys_exit(int stat)
 {
 	cli();
 
+#if 0
 	if (__predict_false(curthread->pid == 1))
 		panic("init process exiting");
 
 	/* close file descriptors */
 
 	curthread->state = DEAD;
+	curthread->parent->state = READY;
+#endif
+	curthread->state = DEAD;
 	yield();
+}
+
+pid_t
+sys_wait(int *stat)
+{
+	curthread->state = BLOCKED;
+	yield();
+	return 1;
 }

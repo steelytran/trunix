@@ -27,6 +27,7 @@ lib/libc/stdio/printf.o \
 lib/libc/stdio/fprintf.o \
 lib/libc/stdio/vfprintf.o \
 lib/libc/sys/mman/mmap.o \
+lib/libc/sys/wait/wait.o \
 lib/libc/fcntl/open.o \
 lib/libc/unistd/_exit.o \
 lib/libc/unistd/fork.o \

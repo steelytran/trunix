@@ -2,7 +2,7 @@
 #define _STDARG_H
 
 #define __NEED_va_list
-#include <trunix/types.h>
+#include <trunix/typedefs.h>
 
 #define va_start(v, l) __builtin_va_start(v, l)
 #define va_end(v) __builtin_va_end(v)

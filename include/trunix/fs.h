@@ -19,11 +19,7 @@
 #ifndef _TRUNIX_FS_H
 #define _TRUNIX_FS_H
 
-#define __NEED_u8
-#define __NEED_u16
-#define __NEED_u32
 #include <trunix/types.h>
-
 #include <sys/types.h>
 
 #define DIRSIZ 128

@@ -81,7 +81,6 @@ struct proc {
 
 void switch_to(struct context **, struct context *);
 void enqueue(struct proc *);
-void dequeue();
 void yield();
 void init_pmm();
 void init_sched();

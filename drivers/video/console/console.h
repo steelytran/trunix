@@ -19,11 +19,9 @@
 #ifndef _CONSOLE_H
 #define _CONSOLE_H
 
-#define __NEED_u8
-#define __NEED_u32
 #include <trunix/types.h>
-
 #include <sys/types.h>
+#include <sys/cdefs.h>
 #include <stddef.h>
 
 struct fbdev;
@@ -40,8 +38,11 @@ extern const u8 misc_fixed_8x13B[128][13];
 extern const u8 unifont_8x16[128][16];
 
 struct console {
-	const void *buf;
+	u8 r; /* read index */
+	u8 w; /* write index */
+	char in[64];
 	struct fbdev *fb;
-};
+	const void *out;
+}__packed;
 
 #endif

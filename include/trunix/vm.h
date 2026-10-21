@@ -19,10 +19,7 @@
 #ifndef _TRUNIX_VM_H
 #define _TRUNIX_VM_H
 
-#define __NEED_u32
-#define __NEED_u64
 #include <trunix/types.h>
-
 #include <sys/queue.h>
 
 #define v2p(x) ((u32)(x) & ~KERNEL_OFFSET)

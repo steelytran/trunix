@@ -18,6 +18,7 @@
 
 #include <trunix/drivers.h>
 #include <trunix/trunix.h>
+#include <trunix/proc.h>
 #include <trunix/vm.h>
 #include <trunix/fs.h>
 #include <sys/types.h>
@@ -46,6 +47,10 @@
     (u32 *)(((u8 *)(fb)->addr) + ((y) * (fb)->pitch + (x) * ((fb)->bpp / 8)))
 
 extern struct kinfo k;
+
+extern char keybuf[64];
+extern u8 w_ndx;
+extern u8 r_ndx;
 
 struct fbdev *fb;
 
@@ -97,7 +102,8 @@ fbcon_open(struct inode *inode, struct file *file)
 	struct file *fb;
 
 	file->data = kmalloc(sizeof(struct console));
-	((struct console *)file->data)->buf = alloc_pages(0x1000);
+	memset(file->data, 0, sizeof(struct console));
+	((struct console *)file->data)->out = alloc_pages(0x1000);
 	fb = file_open("/dev/fb");
 	assert(fb != NULL);
 	((struct console *)file->data)->fb = fb->data;
@@ -114,6 +120,13 @@ fbcon_close(struct inode *inode, struct file *file)
 ssize_t
 fbcon_read(struct file *file, char *buf, size_t sz, loff_t *off)
 {
+	int i;
+	struct proc *p;
+
+	p = getproc();
+	p->state = BLOCKED;
+	yield();
+
 	return -1;
 }
 
