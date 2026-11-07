@@ -23,7 +23,6 @@
 int
 main(void)
 {
-/*
 	int pid;
 
 	if ((pid = fork()) == 0)
@@ -34,11 +33,11 @@ main(void)
 	}
 
 	printf("parent\n");
-*/
+/*
 	char *buf;
 
 	buf = malloc(1024);
 	read(STDIN_FILENO, buf, 1024);
-
+*/
 	for (;;);
 }

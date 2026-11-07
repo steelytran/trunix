@@ -1,4 +1,4 @@
-# init
+# /sbin/
 # Copyright (C) 2026  spenna
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,23 +17,17 @@
 INIT = initrd/sbin/init
 TEST = initrd/sbin/test
 
-$(TEST): sbin/test/test.o sbin/test/crt0.o
-	$(LD) -Llib/libc -lc $^ -o $@
-
-sbin/test/test.o: sbin/test/test.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-sbin/test/crt0.o: sbin/test/crt0.S
-	$(AS) $(ASFLAGS) -c $< -o $@
-
-
-$(INIT): sbin/init/init.o sbin/init/crt0.o
-	$(LD) -Llib/libc -lc $^ -o $@
+$(INIT): sbin/init/init.o
+	$(LD) --sysroot=. -L=/lib -lc $^ lib/crt0.o -o $@
 
 sbin/init/init.o: sbin/init/init.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) --sysroot=. -c $< -o $@
 
-sbin/init/crt0.o: sbin/init/crt0.S
-	$(AS) $(ASFLAGS) -c $< -o $@
 
-CLEANFILES += $(INIT) $(TEST) sbin/init/init.o sbin/init/crt0.o
+$(TEST): sbin/test/test.o
+	$(LD) --sysroot=. -L=/lib -lc $^ lib/crt0.o -o $@
+
+sbin/test/test.o: sbin/test/test.c
+	$(CC) $(CFLAGS) --sysroot=. -c $< -o $@
+
+CLEANFILES += $(INIT) $(TEST) sbin/init/init.o sbin/test/test.o

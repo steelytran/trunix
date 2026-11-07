@@ -123,6 +123,8 @@ fbcon_read(struct file *file, char *buf, size_t sz, loff_t *off)
 	int i;
 
 	curthread->state = BLOCKED;
+
+	/* while not ready */
 	yield();
 
 	return -1;
