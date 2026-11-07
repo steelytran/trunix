@@ -472,12 +472,21 @@ sys_fork()
 int
 sys_execve(const char *path, const char **argv, const char **envp)
 {
+	int argc;
 	struct proc p = *curthread;
 
 	if (loadelf(&p, path) < 0)
 		return -1;
 
 	*curthread = p;
+
+	argc = 0;
+	if (argv != NULL)
+		for (; argv[argc] != NULL; ++argc);
+
+	curthread->tf->ecx = envp;
+	curthread->tf->edx = argv;
+	curthread->tf->eax = argc;
 
 	yield();
 }

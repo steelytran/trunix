@@ -19,7 +19,7 @@
 #include <stdio.h>
 
 int
-main(void)
+main(int argc, char *argv[])
 {
 	printf("child\n");
 	return 0;

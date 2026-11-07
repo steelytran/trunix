@@ -14,9 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-LIBC = lib/libc/libc.a
+LIBC = lib/libc.a
 
 LOBJS = \
+lib/crt0.o \
 lib/libc/assert.o \
 lib/libc/stdlib/malloc.o \
 lib/libc/stdio/stdio.o \
@@ -47,6 +48,9 @@ lib/libc/string/strerror.o \
 
 $(LIBC): $(LOBJS)
 	$(AR) rcs $@ $^
+
+lib/crt0.o: lib/libc/crt0.S
+	$(AS) $(ASFLAGS) -c $< -o $@
 
 %.S.o: %.S
 	$(AS) $(ASFLAGS) -c $< -o $@
