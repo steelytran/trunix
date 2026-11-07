@@ -30,7 +30,7 @@ CFLAGS = -ffreestanding -nostdlib -nobuiltininc -fno-builtin \
 $(INCLUDE) $(TARGET)
 
 INCLUDE = -isystem include
-TARGET = -arch i386 -target i386-unknown-none-elf
+TARGET = -target i386-unknown-none-elf
 
 .PHONY: all clean iso qemu qemu-gdb
 all: iso

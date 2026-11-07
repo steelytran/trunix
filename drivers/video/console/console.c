@@ -121,10 +121,8 @@ ssize_t
 fbcon_read(struct file *file, char *buf, size_t sz, loff_t *off)
 {
 	int i;
-	struct proc *p;
 
-	p = getproc();
-	p->state = BLOCKED;
+	curthread->state = BLOCKED;
 	yield();
 
 	return -1;

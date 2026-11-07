@@ -6,3 +6,4 @@ _start:
 
 	pushl %eax
 	call _exit
+	hlt

@@ -24,9 +24,21 @@ int
 main(void)
 {
 /*
+	int pid;
+
+	if ((pid = fork()) == 0)
+		execve("/sbin/test", NULL, NULL);
+	else if (pid < 0) {
+		printf("fork failed\n");
+		for (;;);
+	}
+
+	printf("parent\n");
+*/
 	char *buf;
 
 	buf = malloc(1024);
 	read(STDIN_FILENO, buf, 1024);
-*/
+
+	for (;;);
 }
