@@ -29,5 +29,6 @@
 #define SYS_creat 7
 #define SYS_execve 8
 #define SYS_mmap 9
+#define SYS_wait 10
 
 #endif

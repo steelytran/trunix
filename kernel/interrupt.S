@@ -24,6 +24,20 @@ pf_msg:		.asciz "Page fault: 0b%b\nAddress: 0x%x\n"
 inv_op_msg:	.asciz "Invalid opcode"
 inv_tss_msg:	.asciz "Invalid TSS\n"
 gpf_msg:	.asciz "General protection fault\n"
+num:		.asciz "0x%x: %d\n"
+
+.bss
+.globl keybuf
+keybuf:
+	.skip 64
+
+.globl w_ndx
+w_ndx:
+	.skip 1
+
+.globl r_ndx
+r_ndx:
+	.skip 1
 
 .text
 /* divide by zero */
@@ -203,7 +217,9 @@ INT_0x20:
 .globl INT_0x21
 INT_0x21:
 	pushl %eax
-	pushl %ebx
+	pushl %ecx
+	pushl %edx
+	pushl %edi
 
 	inb $0x60, %al
 	movb %al, %ah
@@ -219,8 +235,23 @@ INT_0x21:
 	/* scancode */
 	andb $0x7f, %ah
 
+	movl $keybuf, %edi
+	movzbl w_ndx, %ecx
+
+	movb %ah, (%edi, %ecx)
+
+	cmpb $64, %cl
+	jb 0f
+
+	movb $0, w_ndx
+	jmp 1f
+0:
+	incb w_ndx
+
 1:
-	popl %ebx
+	popl %edi
+	popl %edx
+	popl %ecx
 	popl %eax
 	iret
 
@@ -233,7 +264,8 @@ INT_0x80:
 	pushl %gs
 	pushal
 
-	jmp *tbl_syscall(, %eax, 4)
+	call *tbl_syscall(, %eax, 4)
+	movl %eax, (7 * 4)(%esp)
 
 end_syscall:
 	popal
@@ -243,34 +275,31 @@ end_syscall:
 	popl %ds
 	iret
 
-tbl_syscall:
-	.long restart /* 0 */
-	.long exit /* 1 */
-	.long fork /* 2 */
-	.long read /* 3 */
-	.long write /* 4 */
-	.long open /* 5 */
-	.long close /* 6 */
-	.long creat /* 7 */
-	.long execve /* 8 */
-	.long mmap /* 9 */
+/* for syscalls that take no arguments */
+#define fork sys_fork
 
-/*
- * temporary for unimplemented syscalls
- */
+tbl_syscall:
+/* 0 */ .long restart
+/* 1 */ .long exit 
+/* 2 */ .long fork 
+/* 3 */ .long read 
+/* 4 */ .long write
+/* 5 */ .long open 
+/* 6 */ .long close
+/* 7 */ .long creat
+/* 8 */ .long execve
+/* 9 */ .long mmap 
+/* 10 */ .long wait 
+
+/* unimplemented syscalls go here */
 restart:
-	jmp end_syscall
+	ret
 
 exit:
 	pushl %ecx
 	call sys_exit
 	addl $4, %esp
-	jmp end_syscall
-
-fork:
-	call sys_fork
-	movl %eax, (7 * 4)(%esp)
-	jmp end_syscall
+	ret
 
 read:
 	pushl %edx
@@ -278,8 +307,7 @@ read:
 	pushl %ebx
 	call sys_read
 	addl $3 * 4, %esp
-	movl %eax, (7 * 4)(%esp)
-	jmp end_syscall
+	ret
 
 write:
 	pushl %edx
@@ -287,8 +315,7 @@ write:
 	pushl %ebx
 	call sys_write
 	addl $3 * 4, %esp
-	movl %eax, (7 * 4)(%esp)
-	jmp end_syscall
+	ret
 
 open:
 	pushl %edx
@@ -296,14 +323,13 @@ open:
 	pushl %ebx
 	call sys_open
 	addl $3 * 4, %esp
-	movl %eax, (7 * 4)(%esp)
-	jmp end_syscall
+	ret
 
 close:
-	jmp end_syscall
+	ret
 
 creat:
-	jmp end_syscall
+	ret
 
 execve:
 	pushl %edx
@@ -311,8 +337,7 @@ execve:
 	pushl %ebx
 	call sys_execve
 	addl $3 * 4, %esp
-	movl %eax, (7 * 4)(%esp)
-	jmp end_syscall
+	ret
 
 mmap:
 	pushl %ecx
@@ -323,5 +348,10 @@ mmap:
 	pushl %edi
 	call sys_mmap
 	addl $6 * 4, %esp
-	movl %eax, (7 * 4)(%esp)
-	jmp end_syscall
+	ret
+
+wait:
+	pushl %ecx
+	call sys_wait
+	addl $4, %esp
+	ret

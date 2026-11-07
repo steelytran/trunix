@@ -79,14 +79,14 @@ struct proc {
 	TAILQ_ENTRY(proc) entries;
 };
 
+extern struct proc *curthread;
+
 void switch_to(struct context **, struct context *);
 void enqueue(struct proc *);
-void dequeue();
 void yield();
 void init_pmm();
 void init_sched();
 void initsys();
-struct proc *getproc(void);
 
 #ifndef NOKTHREAD
 struct proc *kthread_create(void(*)());

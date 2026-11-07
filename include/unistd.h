@@ -24,7 +24,7 @@
 #define STDERR_FILENO 2
 
 #define __NEED_NULL
-#include <trunix/types.h>
+#include <trunix/typedefs.h>
 
 #include <sys/types.h>
 #include <sys/cdefs.h>

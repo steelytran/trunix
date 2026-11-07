@@ -34,7 +34,9 @@ extern u32 *kpagedir;
 extern struct task_state_segment tss;
 extern struct kinfo k;
 
-static struct proc *curthread;
+struct proc *curthread;
+
+static struct proc *sched;
 static struct proc *idle;
 
 struct elfhdr {
@@ -80,7 +82,6 @@ extern void trapret();
 void init_sched();
 void initsys();
 void enqueue(struct proc *);
-void dequeue();
 void yield();
 __dead void scheduler();
 
@@ -103,6 +104,12 @@ static void
 forkret()
 {
 	return;
+}
+
+static void
+swapper(void)
+{
+	__asm__ volatile ("1:sti\n\thlt\n\tjmp 1b");
 }
 
 static struct proc *
@@ -148,7 +155,6 @@ proc_create()
 	/* iret */
 	p->tf->cs = (3 * 8) | 3;
 	p->tf->eflags = 0x0202;
-
 	p->tf->ss = (4 * 8) | 3;
 
 	p->state = READY;
@@ -174,8 +180,6 @@ free_uvm(struct proc *p)
 		free_pages(p2v(m->pa), m->len);
 	}
 }
-
-
 
 static int
 loadelf(struct proc *p, const char *path)
@@ -317,12 +321,6 @@ kthread_create(void (*eip)())
 	return p;
 }
 
-struct proc *
-getproc(void)
-{
-	return curthread;
-}
-
 void
 init_pmm()
 {
@@ -340,9 +338,10 @@ void
 initsys()
 {
 	curthread = proc_create();
+	assert(curthread != NULL);
+
 	curthread->pid = pid++;
 
-	assert(curthread != NULL);
 	assert(!(loadelf(curthread, "/sbin/init") < 0));
 	sys_open("/dev/console", 0); /* stdin */
 	sys_open("/dev/console", 0); /* stdout */
@@ -354,11 +353,13 @@ initsys()
 void
 init_sched()
 {
-	idle = kthread_create(scheduler);
-	curthread = idle;
+	idle = kthread_create(swapper);
+	sched = kthread_create(scheduler);
+	curthread = sched;
 
 	tss.ss0 = (2 * 8) | 0;
 
+	enqueue(idle);
 	scheduler();
 }
 
@@ -369,21 +370,13 @@ enqueue(struct proc *task)
 }
 
 void
-dequeue()
-{
-	cli();
-	curthread->state = DEAD;
-	yield();
-}
-
-void
 yield()
 {
 	cli();
 	if (curthread->state == RUNNING)
 		curthread->state = READY;
 
-	switch_to(&curthread->context, idle->context);
+	switch_to(&curthread->context, sched->context);
 }
 
 __dead void
@@ -398,26 +391,28 @@ scheduler()
 			if (p->state == READY)
 				goto found;
 
-		for (;;) {
-			sti();
-			hlt();
-		}
+		curthread = idle;
+		swapper();
 
 found:
 		curthread = p;
 		TAILQ_REMOVE(&queue, p, entries);
 		curthread->state = RUNNING;
 
-		write_cr3(curthread->cr3);
-		tss.esp0 = curthread;
+		if (curthread->cr3) {
+			write_cr3(curthread->cr3);
+			tss.esp0 = curthread;
+		}
 
-		switch_to(&idle->context, p->context);
+		switch_to(&sched->context, p->context);
+
+		write_cr3(v2p(kpagedir));
 
 		TAILQ_INSERT_TAIL(&queue, p, entries);
 	}
 }
 
-int
+pid_t
 sys_fork()
 {
 	u32 *pd;
@@ -479,9 +474,8 @@ sys_execve(const char *path, const char **argv, const char **envp)
 {
 	struct proc p = *curthread;
 
-	if (loadelf(&p, path) < 0) {
+	if (loadelf(&p, path) < 0)
 		return -1;
-	}
 
 	*curthread = p;
 
@@ -499,5 +493,15 @@ sys_exit(int stat)
 	/* close file descriptors */
 
 	curthread->state = DEAD;
+	curthread->parent->state = READY;
+
 	yield();
+}
+
+pid_t
+sys_wait(int *stat)
+{
+	curthread->state = BLOCKED;
+	yield();
+	return 1;
 }

@@ -142,10 +142,6 @@ sys_open(const char* path, int oflag, ...)
 {
 	int fd, i;
 	struct file *f;
-	struct proc *p;
-
-	p = getproc();
-	assert(p != NULL);
 
 	for (i = ROOT_INO; i < k.ino_n; ++i)
 		if (strcmp(path, k.dir_tbl[i].name) == 0)
@@ -154,12 +150,12 @@ sys_open(const char* path, int oflag, ...)
 	return -1;
 
 found:
-	for (fd = 0; p->ofile[fd] != NULL; ++fd)
+	for (fd = 0; curthread->ofile[fd] != NULL; ++fd)
 		if (fd >= MAXFILES)
 			return -1;
 
 	f = kmalloc(sizeof(struct file));
-	p->ofile[fd] = f;
+	curthread->ofile[fd] = f;
 	f->inode = &k.ino_tbl[k.dir_tbl[i].inode];
 
 	(*cdevs[f->inode->major]->open)(f->inode, f);
@@ -171,10 +167,8 @@ int
 sys_read(int fd, void *buf, size_t count)
 {
 	struct file *f;
-	struct proc *p;
 
-	p = getproc();
-	f = p->ofile[fd];
+	f = curthread->ofile[fd];
 
 	if (f == NULL)
 		return -1;
@@ -188,10 +182,8 @@ int
 sys_write(int fd, const void *buf, size_t count)
 {
 	struct file *f;
-	struct proc *p;
 
-	p = getproc();
-	f = p->ofile[fd];
+	f = curthread->ofile[fd];
 
 	if (f == NULL)
 		return -1;

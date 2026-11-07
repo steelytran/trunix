@@ -2,7 +2,7 @@
 
 .text
 .globl read
-write:
+read:
 	movl $SYS_read, %eax
 	movl 12(%esp), %edx
 	movl 8(%esp), %ecx

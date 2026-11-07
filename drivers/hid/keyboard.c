@@ -20,7 +20,6 @@
 
 extern struct kinfo k;
 
-
 static int kbd_open(struct inode *, struct file *);
 static int kbd_close(struct inode *, struct file *);
 static ssize_t kbd_read(struct file *file, char *buf, size_t, loff_t *);

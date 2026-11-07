@@ -259,7 +259,6 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 {
 	struct vm_region *mem;
 	struct file *f;
-	struct proc *p;
 	u32 *pd;
 	u32 m;
 	u32 *page;
@@ -267,10 +266,8 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 	if (len == 0)
 		return NULL;
 
-	p = getproc();
-
 	len = pg_roundup(len);
-	if (p->mmap_base + len >= MMAP_LIMIT)
+	if (curthread->mmap_base + len >= MMAP_LIMIT)
 		return NULL;
 
 	mem = kmalloc(sizeof(struct vm_region));
@@ -279,7 +276,7 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 		mem->pa = v2p(page = alloc_pages(len));
 		memset(page, 0, pg_roundup(len));
 	} else {
-		f = p->ofile[fd];
+		f = curthread->ofile[fd];
 		if (f == NULL)
 			return -1;
 
@@ -295,11 +292,11 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 	 * 	least len bytes long
 	 */
 
-	mem->va = p->mmap_base;
-	p->mmap_base += len;
+	mem->va = curthread->mmap_base;
+	curthread->mmap_base += len;
 	mem->len = len;
 
-	pd = p2v(p->cr3);
+	pd = p2v(curthread->cr3);
 	alloc_pt(pd,
 	    mem->va,
 	    mem->pa,
@@ -311,7 +308,7 @@ sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 	 * flags is clobbered.
 	 */
 
-	SLIST_INSERT_HEAD(GETMEMMAP(p), mem, entry);
+	SLIST_INSERT_HEAD(GETMEMMAP(curthread), mem, entry);
 
 	return mem->va;
 }

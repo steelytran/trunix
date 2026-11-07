@@ -19,11 +19,7 @@
 #ifndef _FBDEV_H
 #define _FBDEV_H
 
-#define __NEED_u8
-#define __NEED_u16
-#define __NEED_u32
 #include <trunix/types.h>
-
 #include <trunix/fs.h>
 #include <sys/types.h>
 

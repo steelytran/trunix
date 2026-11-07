@@ -20,7 +20,7 @@
 #define _SYS_MMAN_H
 
 #define __NEED_size_t
-#include <trunix/types.h>
+#include <trunix/typedefs.h>
 
 /*
  * most i386 cpus do not support marking pages as not executable, maybe
