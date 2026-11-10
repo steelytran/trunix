@@ -27,8 +27,6 @@
 
 #include "fbdev.h"
 
-extern struct kinfo k;
-
 static int fbdev_open(struct inode *, struct file *);
 static int fbdev_close(struct inode *, struct file *);
 static ssize_t fbdev_read(struct file *file, char *buf, size_t, loff_t *);

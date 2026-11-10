@@ -75,6 +75,7 @@ struct kinfo {
 	struct inode *ino_tbl;
 	struct dirent *dir_tbl;
 };
+extern struct kinfo k;
 
 __dead void panic(const char *);
 void load_initrd();

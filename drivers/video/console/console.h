@@ -28,18 +28,18 @@ struct fbdev;
 struct file;
 struct inode;
 
+extern const u8 misc_fixed_8x13B[128][13]; 
+extern const u8 unifont_8x16[128][16];
+
 struct font {
 	int w;
 	int h;
 	void *bitmap;
 };
 
-extern const u8 misc_fixed_8x13B[128][13]; 
-extern const u8 unifont_8x16[128][16];
-
 struct console {
-	u8 r; /* read index */
-	u8 w; /* write index */
+	u8 *r; /* read index */
+	u8 *w; /* write index */
 	char in[64];
 	struct fbdev *fb;
 	const void *out;

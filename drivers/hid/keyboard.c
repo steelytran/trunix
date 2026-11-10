@@ -16,9 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <trunix/trunix.h>
 #include <trunix/drivers.h>
-
-extern struct kinfo k;
 
 static int kbd_open(struct inode *, struct file *);
 static int kbd_close(struct inode *, struct file *);

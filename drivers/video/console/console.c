@@ -30,7 +30,7 @@
 #include "../fbdev/fbdev.h"
 
 /* hopefully a very temporary solution... */
-#if 0
+#if 1
 #define FONT unifont_8x16
 #define FONT_H 16
 #else
@@ -45,8 +45,6 @@
 
 #define COORD(fb, x, y)\
     (u32 *)(((u8 *)(fb)->addr) + ((y) * (fb)->pitch + (x) * ((fb)->bpp / 8)))
-
-extern struct kinfo k;
 
 extern char keybuf[64];
 extern u8 w_ndx;
@@ -103,10 +101,15 @@ fbcon_open(struct inode *inode, struct file *file)
 
 	file->data = kmalloc(sizeof(struct console));
 	memset(file->data, 0, sizeof(struct console));
+
 	((struct console *)file->data)->out = alloc_pages(0x1000);
+
 	fb = file_open("/dev/fb");
 	assert(fb != NULL);
 	((struct console *)file->data)->fb = fb->data;
+
+	((struct console *)file->data)->r = &r_ndx;
+	((struct console *)file->data)->w = &w_ndx;
 
 	return 0;
 }
@@ -120,14 +123,20 @@ fbcon_close(struct inode *inode, struct file *file)
 ssize_t
 fbcon_read(struct file *file, char *buf, size_t sz, loff_t *off)
 {
-	int i;
+	char *c = buf;
+	char *keybuf = ((struct console *)file->data)->in;
 
 	curthread->state = BLOCKED;
 
-	/* while not ready */
-	yield();
+	goto first;
+	while (*c++ != '\n') {
+		yield();
+first:
+		*c = keybuf[r_ndx++];
+		r_ndx %= 64;
+	}
 
-	return -1;
+	return c - buf;
 }
 
 static ssize_t

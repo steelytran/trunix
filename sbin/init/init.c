@@ -18,7 +18,6 @@
 
 #include <unistd.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 int
 main(void)
@@ -33,11 +32,6 @@ main(void)
 	}
 
 	printf("parent\n");
-/*
-	char *buf;
 
-	buf = malloc(1024);
-	read(STDIN_FILENO, buf, 1024);
-*/
 	for (;;);
 }

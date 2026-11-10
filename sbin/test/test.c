@@ -16,11 +16,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int
 main(int argc, char *argv[])
 {
+	int i, len;
+	char *buf;
+
 	printf("child\n");
+
+	buf = malloc(1024);
+	len = read(STDIN_FILENO, buf, 1024);
+
+	for (i = 0; i < len; ++i)
+		putchar(buf[i]);
+
 	return 0;
 }

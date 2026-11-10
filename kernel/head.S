@@ -34,7 +34,6 @@ TRUNIX:
 
 	pushl %eax
 	pushl %ebx
-
 	call init_trunix
 
 	pushl %eax

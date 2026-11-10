@@ -233,7 +233,7 @@ INT_0x21:
 	jnz 1f
 
 	/* scancode */
-	andb $0x7f, %ah
+	andb $0b01111111, %ah
 
 	movl $keybuf, %edi
 	movzbl w_ndx, %ecx
@@ -245,10 +245,13 @@ INT_0x21:
 
 	movb $0, w_ndx
 	jmp 1f
+
 0:
 	incb w_ndx
 
 1:
+	/* wake up */
+
 	popl %edi
 	popl %edx
 	popl %ecx

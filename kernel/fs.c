@@ -26,11 +26,6 @@
 #include <stddef.h>
 #include <assert.h>
 
-#include "../drivers/video/console/console.h"
-#include "../drivers/video/fbdev/fbdev.h"
-
-extern struct kinfo k;
-
 const struct file_operations *cdevs[] = {
 	[CONSOLE] = &console_ops,
 	[FRAMEBUFFER] = &fbdev_ops,

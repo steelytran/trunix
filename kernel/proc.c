@@ -32,7 +32,6 @@ struct proc_mmap *memtab;
 
 extern u32 *kpagedir;
 extern struct task_state_segment tss;
-extern struct kinfo k;
 
 struct proc *curthread;
 
